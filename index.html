@@ -332,7 +332,7 @@
 
             <!-- TRENDING -->
             <div class="px-10 pb-16 hidden" data-rank-pane="trending">
-                <h2 class="section-label mb-6">Trending Fighters · 7 Day Momentum</h2>
+                <h2 class="section-label mb-6">Trending Fighters · Momentum Index</h2>
                 <div class="grid md:grid-cols-2 gap-4" id="trendingGrid"></div>
             </div>
         </section>
@@ -452,7 +452,7 @@
                 <div>
                     <div class="panel p-4 mb-6">
                         <div class="flex gap-3">
-                            <img src="Fighter5.png" class="avatar" alt="" onerror="this.style.visibility='hidden'">
+                            <img src="public/Fighter5.png" class="avatar" alt="" onerror="this.style.visibility='hidden'">
                             <div class="flex-1">
                                 <textarea id="composer" rows="3" maxlength="280" placeholder="What's your take?" oninput="updateCount()" style="resize:vertical"></textarea>
                                 <div class="flex items-center justify-between mt-3">
@@ -527,7 +527,7 @@
     </main>
 
     <footer class="border-t border-gray-900 px-10 py-10 text-center">
-        <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">Combat Sports Database · Prototype · All data shown is fictional demo data</p>
+        <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">Combat Sports Database · Prototype · Fighter, ranking and fight data is real but approximate — verify against UFC Stats, Sherdog or BoxRec. News, awards and financials are illustrative placeholders.</p>
     </footer>
 
     <!-- ============ MODALS ============ -->
@@ -558,7 +558,9 @@
 /* =====================================================================
    COMBAT SPORTS DATABASE — prototype UX layer
    Single file, no backend. State persists in localStorage under csdb.*
-   All data below is fictional demo data.
+   Fighters, the P4P board, events and fight results are seeded from the FRDb
+   API (apps/api/src/data) and describe real athletes — approximate, not scraped.
+   NEWS, AWARDS, PPV and GATE below remain invented placeholder content.
    ===================================================================== */
 
 /* ---------------- utilities ---------------- */
@@ -600,83 +602,173 @@ function seeded(str) {
   return ((h >>> 0) % 1000) / 1000;
 }
 
-/* ---------------- data ---------------- */
-const IMGS = ['Fighter1.png', 'Fighter2.png', 'Fighter3.png', 'Fighter4.png', 'Fighter5.png'];
+/* ---------------- data ----------------
+ *
+ * GENERATED — do not hand-edit the four arrays below.
+ *
+ * Seeded from the FRDb API's own modules (apps/api/src/data/{roster,seed,
+ * fights}.ts) so this page shows the same roster, the same P4P board and the
+ * same fight log the web app serves. After changing roster.ts, rebuild the API
+ * and re-run scripts/gen-combat-database-data.js.
+ *
+ * Provenance carries over from roster.ts: these records were compiled from
+ * general knowledge, not scraped from an authoritative source. Treat every
+ * figure as an approximate point-in-time snapshot and verify against UFC
+ * Stats, Sherdog or BoxRec before relying on it.
+ *
+ * Ranking reference year: 2026 (ages and momentum are computed against it,
+ * so the page stays reproducible instead of drifting each January).
+ */
+const IMGS = ['public/Fighter1.png', 'public/Fighter2.png', 'public/Fighter3.png', 'public/Fighter4.png', 'public/Fighter5.png'];
 
+/* 0–99 Digital DNA, derived by deriveAttributes() in @frdb/shared-utils.
+   `rating` is the real P4P score rescaled to 0–5. `trend` is a derived
+   momentum index, NOT a real 7-day move — see gen note above. */
 const FIGHTERS = [
-  { id:'alex-torres',   name:'Alex Torres',    div:'Lightweight',  rec:'28-2',  ko:75, rating:4.8, img:'Fighter2.png', country:'USA',      age:29, stance:'Orthodox', trend:+12.4, status:'ranked',   org:'Apex FC',   attrs:{striking:94,grappling:71,cardio:88,power:91,chin:84,iq:89} },
-  { id:'marcus-vale',   name:'Marcus Vale',    div:'Heavyweight',  rec:'24-1',  ko:68, rating:4.7, img:'Fighter1.png', country:'Brazil',   age:31, stance:'Southpaw', trend:+4.1,  status:'ranked',   org:'Apex FC',   attrs:{striking:88,grappling:79,cardio:74,power:97,chin:90,iq:82} },
-  { id:'dante-reyes',   name:'Dante Reyes',    div:'Welterweight', rec:'22-3',  ko:59, rating:4.6, img:'Fighter3.png', country:'Mexico',   age:27, stance:'Orthodox', trend:+21.8, status:'ranked',   org:'Vanguard',  attrs:{striking:86,grappling:84,cardio:92,power:80,chin:86,iq:90} },
-  { id:'ivan-cross',    name:'Ivan Cross',     div:'Middleweight', rec:'26-2',  ko:73, rating:4.9, img:'Fighter4.png', country:'Ukraine',  age:30, stance:'Orthodox', trend:-2.3,  status:'ranked',   org:'Apex FC',   attrs:{striking:92,grappling:88,cardio:85,power:89,chin:93,iq:94} },
-  { id:'kofi-mensah',   name:'Kofi Mensah',    div:'Light Heavy',  rec:'19-0',  ko:84, rating:4.5, img:'Fighter5.png', country:'Ghana',    age:26, stance:'Southpaw', trend:+34.6, status:'prospect', org:'Vanguard',  attrs:{striking:90,grappling:66,cardio:81,power:95,chin:79,iq:76} },
-  { id:'ren-takeda',    name:'Ren Takeda',     div:'Bantamweight', rec:'17-1',  ko:41, rating:4.4, img:'Fighter3.png', country:'Japan',    age:24, stance:'Orthodox', trend:+28.2, status:'prospect', org:'Circuit 9', attrs:{striking:81,grappling:93,cardio:95,power:64,chin:80,iq:92} },
-  { id:'sofia-lang',    name:'Sofia Lang',     div:'Flyweight',    rec:'15-0',  ko:53, rating:4.6, img:'Fighter5.png', country:'Germany',  age:25, stance:'Southpaw', trend:+31.0, status:'prospect', org:'Apex FC',   attrs:{striking:89,grappling:78,cardio:90,power:74,chin:83,iq:88} },
-  { id:'omar-haddad',   name:'Omar Haddad',    div:'Featherweight',rec:'21-4',  ko:47, rating:4.2, img:'Fighter1.png', country:'Morocco',  age:32, stance:'Orthodox', trend:-8.7,  status:'ranked',   org:'Circuit 9', attrs:{striking:83,grappling:86,cardio:87,power:71,chin:88,iq:85} },
-  { id:'lucas-brant',   name:'Lucas Brant',    div:'Welterweight', rec:'18-2',  ko:61, rating:4.3, img:'Fighter4.png', country:'Australia',age:28, stance:'Orthodox', trend:+9.5,  status:'ranked',   org:'Vanguard',  attrs:{striking:85,grappling:75,cardio:83,power:87,chin:81,iq:79} },
-  { id:'nikolai-varga', name:'Nikolai Varga',  div:'Heavyweight',  rec:'20-5',  ko:80, rating:4.1, img:'Fighter1.png', country:'Hungary',  age:34, stance:'Orthodox', trend:-14.2, status:'ranked',   org:'Apex FC',   attrs:{striking:87,grappling:62,cardio:66,power:96,chin:85,iq:70} },
-  { id:'jae-woo-park',  name:'Jae-Woo Park',   div:'Lightweight',  rec:'16-1',  ko:38, rating:4.4, img:'Fighter3.png', country:'S. Korea', age:23, stance:'Southpaw', trend:+41.3, status:'prospect', org:'Circuit 9', attrs:{striking:78,grappling:95,cardio:93,power:66,chin:82,iq:91} },
-  { id:'tariq-bello',   name:'Tariq Bello',    div:'Middleweight', rec:'14-0',  ko:71, rating:4.3, img:'Fighter2.png', country:'Nigeria',  age:25, stance:'Orthodox', trend:+26.9, status:'prospect', org:'Vanguard',  attrs:{striking:91,grappling:70,cardio:80,power:93,chin:77,iq:74} },
-  { id:'elena-vasquez', name:'Elena Vasquez',  div:'Strawweight',  rec:'19-3',  ko:32, rating:4.5, img:'Fighter5.png', country:'Spain',    age:29, stance:'Orthodox', trend:+6.2,  status:'ranked',   org:'Apex FC',   attrs:{striking:84,grappling:89,cardio:94,power:60,chin:84,iq:93} },
-  { id:'sam-okoye',     name:'Sam Okoye',      div:'Light Heavy',  rec:'23-4',  ko:65, rating:4.2, img:'Fighter4.png', country:'UK',       age:33, stance:'Southpaw', trend:-5.4,  status:'ranked',   org:'Circuit 9', attrs:{striking:86,grappling:80,cardio:76,power:88,chin:91,iq:83} },
-  { id:'mateo-silva',   name:'Mateo Silva',    div:'Featherweight',rec:'13-0',  ko:46, rating:4.1, img:'Fighter2.png', country:'Argentina',age:22, stance:'Orthodox', trend:+38.8, status:'prospect', org:'Vanguard',  attrs:{striking:80,grappling:87,cardio:91,power:68,chin:78,iq:86} },
-  { id:'yuri-petrov',   name:'Yuri Petrov',    div:'Bantamweight', rec:'20-2',  ko:44, rating:4.4, img:'Fighter1.png', country:'Russia',   age:28, stance:'Orthodox', trend:+11.1, status:'ranked',   org:'Apex FC',   attrs:{striking:83,grappling:90,cardio:89,power:69,chin:85,iq:88} }
+  { id:"jon-jones", name:"Jon Jones", nick:"Bones", div:"Heavyweight", rec:"28-1-0 (1 NC)", ko:39, rating:4.7, rank:10, img:"public/Fighter1.png", country:"American", age:39, stance:"Orthodox", trend:9.5, status:"ranked", org:"MMA", style:"All-Round MMA", summary:"Elite all-around mixed martial artist with unprecedented control and adaptability.", attrs:{"power":92,"speed":87,"cardio":89,"chin":88,"wrestling":99,"grappling":92,"fightIq":98} },
+  { id:"islam-makhachev", name:"Islam Makhachev", nick:null, div:"Lightweight", rec:"27-1-0", ko:19, rating:4.5, rank:18, img:"public/Fighter2.png", country:"Russian", age:35, stance:"Southpaw", trend:15.8, status:"ranked", org:"MMA", style:"Grappling Pressure", summary:"Relentless grappler with elite control and championship composure.", attrs:{"power":84,"speed":82,"cardio":94,"chin":86,"wrestling":97,"grappling":95,"fightIq":90} },
+  { id:"alex-volkanovski", name:"Alex Volkanovski", nick:"The Great", div:"Featherweight", rec:"27-4-0", ko:48, rating:3.8, rank:64, img:"public/Fighter3.png", country:"Australian", age:38, stance:"Orthodox", trend:9.6, status:"ranked", org:"MMA", style:"Hybrid Striker", summary:"Elite featherweight with sustained pressure and near-flawless fight IQ.", attrs:{"power":90,"speed":88,"cardio":96,"chin":87,"wrestling":80,"grappling":68,"fightIq":95} },
+  { id:"alexandre-pantoja", name:"Alexandre Pantoja", nick:"The Cannibal", div:"Flyweight", rec:"30-5-0", ko:20, rating:4.1, rank:39, img:"public/Fighter4.png", country:"Brazilian", age:36, stance:"Orthodox", trend:10.1, status:"ranked", org:"MMA", style:"Grappler", summary:null, attrs:{"power":73,"speed":96,"cardio":87,"chin":88,"wrestling":75,"grappling":75,"fightIq":95} },
+  { id:"merab-dvalishvili", name:"Merab Dvalishvili", nick:"The Machine", div:"Bantamweight", rec:"20-4-0", ko:15, rating:3.9, rank:57, img:"public/Fighter5.png", country:"Georgian", age:35, stance:"Orthodox", trend:9.6, status:"ranked", org:"MMA", style:"Wrestling Pressure", summary:null, attrs:{"power":72,"speed":95,"cardio":84,"chin":86,"wrestling":68,"grappling":66,"fightIq":92} },
+  { id:"belal-muhammad", name:"Belal Muhammad", nick:"Remember The Name", div:"Welterweight", rec:"24-4-0 (1 NC)", ko:17, rating:3.9, rank:53, img:"public/Fighter1.png", country:"American", age:38, stance:"Orthodox", trend:4.6, status:"ranked", org:"MMA", style:"Pressure Wrestler", summary:null, attrs:{"power":71,"speed":91,"cardio":84,"chin":88,"wrestling":69,"grappling":67,"fightIq":93} },
+  { id:"dricus-du-plessis", name:"Dricus du Plessis", nick:"Stillknocks", div:"Middleweight", rec:"23-3-0", ko:52, rating:4.4, rank:22, img:"public/Fighter2.png", country:"South African", age:32, stance:"Orthodox", trend:13.1, status:"ranked", org:"MMA", style:"Unorthodox Brawler", summary:null, attrs:{"power":83,"speed":89,"cardio":85,"chin":88,"wrestling":71,"grappling":71,"fightIq":94} },
+  { id:"magomed-ankalaev", name:"Magomed Ankalaev", nick:null, div:"Light Heavyweight", rec:"21-2-1", ko:38, rating:4.1, rank:45, img:"public/Fighter3.png", country:"Russian", age:34, stance:"Orthodox", trend:10.9, status:"ranked", org:"MMA", style:"Counter Striker", summary:null, attrs:{"power":78,"speed":88,"cardio":82,"chin":88,"wrestling":69,"grappling":67,"fightIq":92} },
+  { id:"tom-aspinall", name:"Tom Aspinall", nick:null, div:"Heavyweight", rec:"15-3-0", ko:60, rating:4.1, rank:43, img:"public/Fighter4.png", country:"British", age:33, stance:"Orthodox", trend:9.2, status:"ranked", org:"MMA", style:"Explosive Finisher", summary:null, attrs:{"power":84,"speed":86,"cardio":79,"chin":84,"wrestling":70,"grappling":70,"fightIq":89} },
+  { id:"ilia-topuria", name:"Ilia Topuria", nick:"El Matador", div:"Lightweight", rec:"17-0-0", ko:59, rating:4.8, rank:6, img:"public/Fighter5.png", country:"Georgian", age:29, stance:"Orthodox", trend:16.8, status:"ranked", org:"MMA", style:"Boxing-Heavy Hybrid", summary:null, attrs:{"power":84,"speed":95,"cardio":80,"chin":91,"wrestling":70,"grappling":69,"fightIq":93} },
+  { id:"khabib-nurmagomedov", name:"Khabib Nurmagomedov", nick:"The Eagle", div:"Lightweight", rec:"29-0-0", ko:28, rating:4.4, rank:26, img:"public/Fighter1.png", country:"Russian", age:38, stance:"Orthodox", trend:-6.9, status:"retired", org:"MMA", style:"Sambo Grappler", summary:null, attrs:{"power":75,"speed":93,"cardio":86,"chin":94,"wrestling":73,"grappling":73,"fightIq":97} },
+  { id:"georges-st-pierre", name:"Georges St-Pierre", nick:"GSP", div:"Welterweight", rec:"26-2-0", ko:31, rating:4.2, rank:34, img:"public/Fighter2.png", country:"Canadian", age:45, stance:"Orthodox", trend:-17.2, status:"retired", org:"MMA", style:"Complete Fighter", summary:null, attrs:{"power":78,"speed":92,"cardio":90,"chin":91,"wrestling":71,"grappling":70,"fightIq":98} },
+  { id:"anderson-silva", name:"Anderson Silva", nick:"The Spider", div:"Middleweight", rec:"34-11-0", ko:68, rating:3.9, rank:60, img:"public/Fighter3.png", country:"Brazilian", age:51, stance:"Orthodox", trend:-28.6, status:"retired", org:"MMA", style:"Muay Thai Counter", summary:null, attrs:{"power":90,"speed":88,"cardio":92,"chin":84,"wrestling":70,"grappling":68,"fightIq":96} },
+  { id:"daniel-cormier", name:"Daniel Cormier", nick:"DC", div:"Light Heavyweight", rec:"22-3-0 (1 NC)", ko:45, rating:3.7, rank:71, img:"public/Fighter4.png", country:"American", age:47, stance:"Orthodox", trend:-23.4, status:"retired", org:"MMA", style:"Wrestling Clinch", summary:null, attrs:{"power":81,"speed":91,"cardio":85,"chin":88,"wrestling":70,"grappling":69,"fightIq":94} },
+  { id:"stipe-miocic", name:"Stipe Miocic", nick:null, div:"Heavyweight", rec:"20-5-0", ko:75, rating:3.9, rank:59, img:"public/Fighter5.png", country:"American", age:44, stance:"Orthodox", trend:-8.6, status:"retired", org:"MMA", style:"Boxing Wrestler", summary:null, attrs:{"power":91,"speed":86,"cardio":86,"chin":85,"wrestling":68,"grappling":65,"fightIq":93} },
+  { id:"max-holloway", name:"Max Holloway", nick:"Blessed", div:"Featherweight", rec:"26-8-0", ko:46, rating:3.5, rank:75, img:"public/Fighter1.png", country:"American", age:35, stance:"Orthodox", trend:6.9, status:"ranked", org:"MMA", style:"Volume Striker", summary:null, attrs:{"power":81,"speed":90,"cardio":86,"chin":85,"wrestling":69,"grappling":67,"fightIq":93} },
+  { id:"charles-oliveira", name:"Charles Oliveira", nick:"do Bronx", div:"Lightweight", rec:"35-11-0 (1 NC)", ko:29, rating:3.6, rank:72, img:"public/Fighter2.png", country:"Brazilian", age:37, stance:"Orthodox", trend:2.1, status:"ranked", org:"MMA", style:"Submission Specialist", summary:null, attrs:{"power":75,"speed":91,"cardio":85,"chin":84,"wrestling":76,"grappling":78,"fightIq":92} },
+  { id:"dustin-poirier", name:"Dustin Poirier", nick:"The Diamond", div:"Lightweight", rec:"30-10-0 (1 NC)", ko:50, rating:3.4, rank:79, img:"public/Fighter3.png", country:"American", age:37, stance:"Orthodox", trend:0.8, status:"retired", org:"MMA", style:"Boxing Brawler", summary:null, attrs:{"power":81,"speed":92,"cardio":84,"chin":84,"wrestling":72,"grappling":71,"fightIq":91} },
+  { id:"justin-gaethje", name:"Justin Gaethje", nick:"The Highlight", div:"Lightweight", rec:"26-5-0", ko:77, rating:3.6, rank:73, img:"public/Fighter4.png", country:"American", age:38, stance:"Orthodox", trend:2.9, status:"ranked", org:"MMA", style:"Violent Pressure", summary:null, attrs:{"power":89,"speed":91,"cardio":84,"chin":88,"wrestling":68,"grappling":65,"fightIq":93} },
+  { id:"conor-mcgregor", name:"Conor McGregor", nick:"The Notorious", div:"Lightweight", rec:"22-6-0", ko:86, rating:3.4, rank:78, img:"public/Fighter5.png", country:"Irish", age:38, stance:"Southpaw", trend:-17.2, status:"ranked", org:"MMA", style:"Counter Southpaw", summary:null, attrs:{"power":92,"speed":92,"cardio":83,"chin":85,"wrestling":68,"grappling":66,"fightIq":91} },
+  { id:"israel-adesanya", name:"Israel Adesanya", nick:"The Last Stylebender", div:"Middleweight", rec:"24-5-0", ko:63, rating:3.8, rank:66, img:"public/Fighter1.png", country:"Nigerian-New Zealander", age:37, stance:"Switch", trend:8.4, status:"ranked", org:"MMA", style:"Kickboxing Counter", summary:null, attrs:{"power":87,"speed":86,"cardio":88,"chin":87,"wrestling":68,"grappling":65,"fightIq":95} },
+  { id:"sean-omalley", name:"Sean O'Malley", nick:"Sugar", div:"Bantamweight", rec:"18-3-0 (1 NC)", ko:67, rating:3.5, rank:74, img:"public/Fighter2.png", country:"American", age:32, stance:"Switch", trend:10.2, status:"ranked", org:"MMA", style:"Long-Range Striker", summary:null, attrs:{"power":86,"speed":91,"cardio":81,"chin":86,"wrestling":67,"grappling":65,"fightIq":91} },
+  { id:"kamaru-usman", name:"Kamaru Usman", nick:"The Nigerian Nightmare", div:"Welterweight", rec:"20-4-0", ko:45, rating:4.0, rank:47, img:"public/Fighter3.png", country:"Nigerian-American", age:39, stance:"Orthodox", trend:5.8, status:"ranked", org:"MMA", style:"Wrestling Pressure", summary:null, attrs:{"power":81,"speed":90,"cardio":85,"chin":86,"wrestling":68,"grappling":65,"fightIq":93} },
+  { id:"leon-edwards", name:"Leon Edwards", nick:"Rocky", div:"Welterweight", rec:"22-5-0 (1 NC)", ko:36, rating:3.7, rank:70, img:"public/Fighter4.png", country:"British", age:35, stance:"Southpaw", trend:8, status:"ranked", org:"MMA", style:"Technical Southpaw", summary:null, attrs:{"power":78,"speed":90,"cardio":84,"chin":86,"wrestling":69,"grappling":68,"fightIq":92} },
+  { id:"jiri-prochazka", name:"Jiri Prochazka", nick:"Denisa", div:"Light Heavyweight", rec:"31-5-1", ko:84, rating:4.1, rank:40, img:"public/Fighter5.png", country:"Czech", age:34, stance:"Switch", trend:8.5, status:"ranked", org:"MMA", style:"Chaotic Samurai", summary:null, attrs:{"power":91,"speed":87,"cardio":84,"chin":88,"wrestling":69,"grappling":67,"fightIq":93} },
+  { id:"alex-pereira", name:"Alex Pereira", nick:"Poatan", div:"Light Heavyweight", rec:"13-3-0", ko:85, rating:4.3, rank:31, img:"public/Fighter1.png", country:"Brazilian", age:39, stance:"Orthodox", trend:3.2, status:"ranked", org:"MMA", style:"Kickboxing Power", summary:null, attrs:{"power":92,"speed":86,"cardio":80,"chin":83,"wrestling":65,"grappling":63,"fightIq":89} },
+  { id:"ciryl-gane", name:"Ciryl Gane", nick:"Bon Gamin", div:"Heavyweight", rec:"13-3-0", ko:46, rating:3.7, rank:68, img:"public/Fighter2.png", country:"French", age:36, stance:"Switch", trend:4.7, status:"ranked", org:"MMA", style:"Movement Striker", summary:null, attrs:{"power":80,"speed":86,"cardio":77,"chin":83,"wrestling":68,"grappling":68,"fightIq":88} },
+  { id:"sean-strickland", name:"Sean Strickland", nick:null, div:"Middleweight", rec:"29-7-0", ko:41, rating:3.4, rank:77, img:"public/Fighter3.png", country:"American", age:35, stance:"Orthodox", trend:5.8, status:"ranked", org:"MMA", style:"Philly Shell Volume", summary:null, attrs:{"power":78,"speed":89,"cardio":84,"chin":86,"wrestling":70,"grappling":68,"fightIq":92} },
+  { id:"robert-whittaker", name:"Robert Whittaker", nick:"The Reaper", div:"Middleweight", rec:"26-8-0", ko:42, rating:3.3, rank:80, img:"public/Fighter4.png", country:"Australian", age:36, stance:"Orthodox", trend:4.6, status:"ranked", org:"MMA", style:"Karate Counter", summary:null, attrs:{"power":79,"speed":89,"cardio":86,"chin":85,"wrestling":71,"grappling":69,"fightIq":92} },
+  { id:"arman-tsarukyan", name:"Arman Tsarukyan", nick:null, div:"Lightweight", rec:"22-3-0", ko:23, rating:3.8, rank:67, img:"public/Fighter5.png", country:"Armenian", age:30, stance:"Orthodox", trend:10.2, status:"prospect", org:"MMA", style:"Wrestling Hybrid", summary:null, attrs:{"power":73,"speed":94,"cardio":82,"chin":88,"wrestling":71,"grappling":70,"fightIq":92} },
+  { id:"shavkat-rakhmonov", name:"Shavkat Rakhmonov", nick:"Nomad", div:"Welterweight", rec:"19-0-0", ko:42, rating:4.1, rank:38, img:"public/Fighter1.png", country:"Kazakh", age:32, stance:"Orthodox", trend:15, status:"ranked", org:"MMA", style:"Finisher", summary:null, attrs:{"power":79,"speed":90,"cardio":79,"chin":91,"wrestling":74,"grappling":76,"fightIq":92} },
+  { id:"movsar-evloev", name:"Movsar Evloev", nick:null, div:"Featherweight", rec:"19-0-0", ko:16, rating:3.9, rank:56, img:"public/Fighter2.png", country:"Russian", age:32, stance:"Orthodox", trend:15, status:"ranked", org:"MMA", style:"Grinding Wrestler", summary:null, attrs:{"power":71,"speed":95,"cardio":79,"chin":91,"wrestling":69,"grappling":68,"fightIq":92} },
+  { id:"brandon-moreno", name:"Brandon Moreno", nick:"The Assassin Baby", div:"Flyweight", rec:"22-8-2", ko:27, rating:4.0, rank:50, img:"public/Fighter3.png", country:"Mexican", age:33, stance:"Orthodox", trend:4.3, status:"ranked", org:"MMA", style:"Well-Rounded", summary:null, attrs:{"power":75,"speed":93,"cardio":86,"chin":83,"wrestling":73,"grappling":73,"fightIq":91} },
+  { id:"petr-yan", name:"Petr Yan", nick:"No Mercy", div:"Bantamweight", rec:"19-5-0", ko:42, rating:3.9, rank:61, img:"public/Fighter4.png", country:"Russian", age:33, stance:"Switch", trend:7.6, status:"ranked", org:"MMA", style:"Technical Boxer", summary:null, attrs:{"power":79,"speed":94,"cardio":82,"chin":84,"wrestling":68,"grappling":65,"fightIq":90} },
+  { id:"aljamain-sterling", name:"Aljamain Sterling", nick:"Funk Master", div:"Featherweight", rec:"24-5-0", ko:13, rating:3.7, rank:69, img:"public/Fighter5.png", country:"American", age:37, stance:"Orthodox", trend:6.6, status:"ranked", org:"MMA", style:"Scrambling Grappler", summary:null, attrs:{"power":71,"speed":94,"cardio":86,"chin":87,"wrestling":72,"grappling":72,"fightIq":94} },
+  { id:"demetrious-johnson", name:"Demetrious Johnson", nick:"Mighty Mouse", div:"Flyweight", rec:"25-4-1", ko:16, rating:4.1, rank:41, img:"public/Fighter1.png", country:"American", age:40, stance:"Switch", trend:-6.2, status:"retired", org:"MMA", style:"Complete Technician", summary:null, attrs:{"power":75,"speed":98,"cardio":93,"chin":88,"wrestling":73,"grappling":73,"fightIq":98} },
+  { id:"jose-aldo", name:"Jose Aldo", nick:"Junior", div:"Bantamweight", rec:"32-9-0", ko:53, rating:4.0, rank:49, img:"public/Fighter2.png", country:"Brazilian", age:40, stance:"Orthodox", trend:4.1, status:"retired", org:"MMA", style:"Muay Thai Counter", summary:null, attrs:{"power":84,"speed":94,"cardio":90,"chin":85,"wrestling":69,"grappling":66,"fightIq":95} },
+  { id:"fedor-emelianenko", name:"Fedor Emelianenko", nick:"The Last Emperor", div:"Heavyweight", rec:"40-7-1 (1 NC)", ko:43, rating:3.9, rank:54, img:"public/Fighter3.png", country:"Russian", age:50, stance:"Orthodox", trend:-26.5, status:"retired", org:"MMA", style:"Sambo Striker", summary:null, attrs:{"power":80,"speed":90,"cardio":87,"chin":88,"wrestling":74,"grappling":74,"fightIq":95} },
+  { id:"amanda-nunes", name:"Amanda Nunes", nick:"The Lioness", div:"Women's Bantamweight", rec:"23-5-0", ko:61, rating:4.2, rank:35, img:"public/Fighter4.png", country:"Brazilian", age:38, stance:"Orthodox", trend:-6.5, status:"retired", org:"MMA", style:"Power Striker", summary:"One of the most devastating female champions in fight history with elite knockout ability.", attrs:{"power":96,"speed":84,"cardio":82,"chin":86,"wrestling":65,"grappling":70,"fightIq":88} },
+  { id:"valentina-shevchenko", name:"Valentina Shevchenko", nick:"Bullet", div:"Women's Flyweight", rec:"25-4-1", ko:32, rating:4.1, rank:44, img:"public/Fighter5.png", country:"Kyrgyzstani", age:38, stance:"Southpaw", trend:9.9, status:"ranked", org:"MMA", style:"Muay Thai Technician", summary:null, attrs:{"power":78,"speed":96,"cardio":90,"chin":88,"wrestling":72,"grappling":71,"fightIq":97} },
+  { id:"zhang-weili", name:"Zhang Weili", nick:"Magnum", div:"Women's Strawweight", rec:"26-3-0", ko:42, rating:4.3, rank:28, img:"public/Fighter1.png", country:"Chinese", age:37, stance:"Orthodox", trend:10.3, status:"ranked", org:"MMA", style:"Explosive Hybrid", summary:null, attrs:{"power":80,"speed":97,"cardio":87,"chin":90,"wrestling":72,"grappling":72,"fightIq":96} },
+  { id:"alexa-grasso", name:"Alexa Grasso", nick:null, div:"Women's Flyweight", rec:"16-5-1", ko:19, rating:3.8, rank:63, img:"public/Fighter2.png", country:"Mexican", age:33, stance:"Orthodox", trend:5, status:"ranked", org:"MMA", style:"Boxing Technician", summary:null, attrs:{"power":72,"speed":95,"cardio":81,"chin":82,"wrestling":70,"grappling":69,"fightIq":88} },
+  { id:"julianna-pena", name:"Julianna Pena", nick:"The Venezuelan Vixen", div:"Women's Bantamweight", rec:"13-5-0", ko:8, rating:3.5, rank:76, img:"public/Fighter3.png", country:"American", age:37, stance:"Orthodox", trend:-0.3, status:"ranked", org:"MMA", style:"Pressure Grappler", summary:null, attrs:{"power":68,"speed":94,"cardio":78,"chin":80,"wrestling":72,"grappling":73,"fightIq":86} },
+  { id:"rose-namajunas", name:"Rose Namajunas", nick:"Thug", div:"Women's Flyweight", rec:"14-6-0", ko:29, rating:3.9, rank:55, img:"public/Fighter4.png", country:"American", age:34, stance:"Orthodox", trend:3.9, status:"ranked", org:"MMA", style:"Karate Counter", summary:null, attrs:{"power":75,"speed":95,"cardio":80,"chin":79,"wrestling":70,"grappling":70,"fightIq":87} },
+  { id:"kayla-harrison", name:"Kayla Harrison", nick:null, div:"Women's Bantamweight", rec:"19-1-0", ko:21, rating:4.2, rank:37, img:"public/Fighter5.png", country:"American", age:36, stance:"Southpaw", trend:10.2, status:"ranked", org:"MMA", style:"Judo Grappler", summary:null, attrs:{"power":72,"speed":94,"cardio":79,"chin":89,"wrestling":73,"grappling":74,"fightIq":92} },
+  { id:"ronda-rousey", name:"Ronda Rousey", nick:"Rowdy", div:"Women's Bantamweight", rec:"12-2-0", ko:25, rating:4.0, rank:46, img:"public/Fighter1.png", country:"American", age:39, stance:"Orthodox", trend:-15.3, status:"retired", org:"MMA", style:"Judo Armbar", summary:null, attrs:{"power":76,"speed":94,"cardio":81,"chin":84,"wrestling":75,"grappling":79,"fightIq":91} },
+  { id:"cris-cyborg", name:"Cris Cyborg", nick:null, div:"Women's Featherweight", rec:"27-2-1", ko:74, rating:4.6, rank:14, img:"public/Fighter2.png", country:"Brazilian", age:41, stance:"Orthodox", trend:7.5, status:"ranked", org:"MMA", style:"Aggressive Muay Thai", summary:null, attrs:{"power":91,"speed":94,"cardio":90,"chin":91,"wrestling":69,"grappling":66,"fightIq":98} },
+  { id:"oleksandr-usyk", name:"Oleksandr Usyk", nick:"The Cat", div:"Heavyweight", rec:"24-0-0", ko:63, rating:4.8, rank:4, img:"public/Fighter3.png", country:"Ukrainian", age:39, stance:"Southpaw", trend:13.4, status:"ranked", org:"Boxing", style:"Elusive Boxer", summary:"Unified heavyweight with elite movement, timing, and technical craft.", attrs:{"power":86,"speed":91,"cardio":92,"chin":89,"wrestling":25,"grappling":18,"fightIq":97} },
+  { id:"canelo-alvarez", name:"Canelo Alvarez", nick:"Canelo", div:"Super Middleweight", rec:"63-3-2", ko:62, rating:4.6, rank:11, img:"public/Fighter4.png", country:"Mexican", age:36, stance:"Orthodox", trend:20.1, status:"ranked", org:"Boxing", style:"Counter Puncher", summary:"Elite all-time boxer with polished combinations and ring IQ.", attrs:{"power":92,"speed":85,"cardio":90,"chin":91,"wrestling":35,"grappling":20,"fightIq":94} },
+  { id:"terence-crawford", name:"Terence Crawford", nick:"Bud", div:"Super Middleweight", rec:"42-0-0", ko:74, rating:4.9, rank:3, img:"public/Fighter5.png", country:"American", age:39, stance:"Switch", trend:17, status:"ranked", org:"Boxing", style:"All-Round Boxer", summary:"Part technician, part finisher; elite all-round boxer with high-level ring control.", attrs:{"power":88,"speed":90,"cardio":87,"chin":82,"wrestling":20,"grappling":12,"fightIq":96} },
+  { id:"naoya-inoue", name:"Naoya Inoue", nick:"Monster", div:"Super Bantamweight", rec:"31-0-0", ko:87, rating:5.0, rank:1, img:"public/Fighter1.png", country:"Japanese", age:33, stance:"Orthodox", trend:25.8, status:"ranked", org:"Boxing", style:"Pressure Boxer", summary:"Explosive pressure fighter with elite finishing ability.", attrs:{"power":95,"speed":89,"cardio":88,"chin":84,"wrestling":30,"grappling":15,"fightIq":92} },
+  { id:"dmitry-bivol", name:"Dmitry Bivol", nick:null, div:"Light Heavyweight", rec:"24-1-0", ko:50, rating:4.6, rank:13, img:"public/Fighter2.png", country:"Kyrgyzstani-Russian", age:36, stance:"Orthodox", trend:20.5, status:"ranked", org:"Boxing", style:"Technical Boxer", summary:"Technical star with measured control, elite patience, and standout defense.", attrs:{"power":84,"speed":86,"cardio":92,"chin":83,"wrestling":10,"grappling":8,"fightIq":94} },
+  { id:"gervonta-davis", name:"Gervonta Davis", nick:"Tank", div:"Lightweight", rec:"30-0-1", ko:93, rating:4.8, rank:5, img:"public/Fighter3.png", country:"American", age:32, stance:"Southpaw", trend:20.9, status:"ranked", org:"Boxing", style:"Power Puncher", summary:"Explosive puncher with game-changing power and fearless pressure.", attrs:{"power":94,"speed":88,"cardio":80,"chin":78,"wrestling":12,"grappling":8,"fightIq":82} },
+  { id:"artur-beterbiev", name:"Artur Beterbiev", nick:null, div:"Light Heavyweight", rec:"21-1-0", ko:95, rating:4.4, rank:23, img:"public/Fighter4.png", country:"Russian-Canadian", age:41, stance:"Orthodox", trend:10.6, status:"ranked", org:"Boxing", style:"Destructive Pressure", summary:null, attrs:{"power":99,"speed":92,"cardio":87,"chin":90,"wrestling":14,"grappling":12,"fightIq":96} },
+  { id:"shakur-stevenson", name:"Shakur Stevenson", nick:null, div:"Lightweight", rec:"24-0-0", ko:46, rating:4.5, rank:16, img:"public/Fighter5.png", country:"American", age:29, stance:"Southpaw", trend:18.6, status:"prospect", org:"Boxing", style:"Defensive Technician", summary:null, attrs:{"power":85,"speed":95,"cardio":84,"chin":92,"wrestling":15,"grappling":12,"fightIq":96} },
+  { id:"tyson-fury", name:"Tyson Fury", nick:"The Gypsy King", div:"Heavyweight", rec:"34-2-1", ko:71, rating:4.0, rank:48, img:"public/Fighter1.png", country:"British", age:38, stance:"Orthodox", trend:3.7, status:"retired", org:"Boxing", style:"Awkward Mover", summary:null, attrs:{"power":93,"speed":83,"cardio":88,"chin":91,"wrestling":16,"grappling":13,"fightIq":97} },
+  { id:"anthony-joshua", name:"Anthony Joshua", nick:"AJ", div:"Heavyweight", rec:"28-4-0", ko:89, rating:4.4, rank:21, img:"public/Fighter2.png", country:"British", age:37, stance:"Orthodox", trend:13.9, status:"ranked", org:"Boxing", style:"Power Boxer", summary:null, attrs:{"power":99,"speed":85,"cardio":91,"chin":89,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"deontay-wilder", name:"Deontay Wilder", nick:"The Bronze Bomber", div:"Heavyweight", rec:"43-4-1", ko:98, rating:3.9, rank:62, img:"public/Fighter3.png", country:"American", age:41, stance:"Orthodox", trend:10, status:"ranked", org:"Boxing", style:"One-Punch Power", summary:null, attrs:{"power":99,"speed":84,"cardio":92,"chin":90,"wrestling":16,"grappling":13,"fightIq":99} },
+  { id:"devin-haney", name:"Devin Haney", nick:"The Dream", div:"Welterweight", rec:"32-1-0", ko:47, rating:4.4, rank:24, img:"public/Fighter4.png", country:"American", age:28, stance:"Orthodox", trend:19.2, status:"prospect", org:"Boxing", style:"Range Technician", summary:null, attrs:{"power":86,"speed":94,"cardio":89,"chin":93,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"jaron-ennis", name:"Jaron Ennis", nick:"Boots", div:"Super Welterweight", rec:"34-0-0", ko:88, rating:4.5, rank:19, img:"public/Fighter5.png", country:"American", age:29, stance:"Switch", trend:17.7, status:"prospect", org:"Boxing", style:"Switch-Hitting Finisher", summary:null, attrs:{"power":98,"speed":92,"cardio":86,"chin":94,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"david-benavidez", name:"David Benavidez", nick:"The Mexican Monster", div:"Light Heavyweight", rec:"31-0-0", ko:84, rating:4.5, rank:17, img:"public/Fighter1.png", country:"American", age:30, stance:"Orthodox", trend:18.6, status:"prospect", org:"Boxing", style:"Volume Pressure", summary:null, attrs:{"power":97,"speed":90,"cardio":87,"chin":94,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"vasiliy-lomachenko", name:"Vasiliy Lomachenko", nick:"Hi-Tech", div:"Lightweight", rec:"18-3-0", ko:67, rating:4.3, rank:27, img:"public/Fighter2.png", country:"Ukrainian", age:38, stance:"Southpaw", trend:3, status:"retired", org:"Boxing", style:"Matrix Footwork", summary:null, attrs:{"power":92,"speed":95,"cardio":85,"chin":86,"wrestling":14,"grappling":12,"fightIq":94} },
+  { id:"errol-spence-jr", name:"Errol Spence Jr", nick:"The Truth", div:"Welterweight", rec:"28-2-0", ko:79, rating:4.3, rank:30, img:"public/Fighter3.png", country:"American", age:36, stance:"Southpaw", trend:14.9, status:"ranked", org:"Boxing", style:"Pressure Southpaw", summary:null, attrs:{"power":96,"speed":92,"cardio":89,"chin":91,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"floyd-mayweather", name:"Floyd Mayweather Jr", nick:"Money", div:"Welterweight", rec:"50-0-0", ko:54, rating:4.7, rank:8, img:"public/Fighter4.png", country:"American", age:49, stance:"Orthodox", trend:-17.2, status:"retired", org:"Boxing", style:"Shoulder Roll Defense", summary:null, attrs:{"power":90,"speed":95,"cardio":94,"chin":94,"wrestling":16,"grappling":13,"fightIq":99} },
+  { id:"manny-pacquiao", name:"Manny Pacquiao", nick:"PacMan", div:"Welterweight", rec:"62-8-3", ko:63, rating:4.7, rank:7, img:"public/Fighter5.png", country:"Filipino", age:48, stance:"Southpaw", trend:0.2, status:"ranked", org:"Boxing", style:"Explosive Southpaw", summary:null, attrs:{"power":93,"speed":95,"cardio":94,"chin":89,"wrestling":16,"grappling":13,"fightIq":99} },
+  { id:"juan-francisco-estrada", name:"Juan Francisco Estrada", nick:"El Gallo", div:"Super Flyweight", rec:"44-4-0", ko:64, rating:4.6, rank:15, img:"public/Fighter1.png", country:"Mexican", age:36, stance:"Orthodox", trend:16.1, status:"ranked", org:"Boxing", style:"Technical Pressure", summary:null, attrs:{"power":92,"speed":96,"cardio":90,"chin":91,"wrestling":16,"grappling":13,"fightIq":98} },
+  { id:"jesse-rodriguez", name:"Jesse Rodriguez", nick:"Bam", div:"Super Flyweight", rec:"22-0-0", ko:68, rating:4.6, rank:12, img:"public/Fighter2.png", country:"American", age:26, stance:"Southpaw", trend:19.5, status:"ranked", org:"Boxing", style:"Slick Southpaw", summary:null, attrs:{"power":92,"speed":97,"cardio":84,"chin":92,"wrestling":14,"grappling":12,"fightIq":96} },
+  { id:"zurdo-ramirez", name:"Gilberto Ramirez", nick:"Zurdo", div:"Cruiserweight", rec:"48-1-0", ko:63, rating:4.4, rank:20, img:"public/Fighter3.png", country:"Mexican", age:35, stance:"Southpaw", trend:15.5, status:"ranked", org:"Boxing", style:"Tall Southpaw", summary:null, attrs:{"power":90,"speed":89,"cardio":86,"chin":93,"wrestling":16,"grappling":13,"fightIq":97} },
+  { id:"teofimo-lopez", name:"Teofimo Lopez", nick:"The Takeover", div:"Super Lightweight", rec:"22-1-0", ko:59, rating:4.4, rank:25, img:"public/Fighter4.png", country:"American", age:29, stance:"Orthodox", trend:16.9, status:"prospect", org:"Boxing", style:"Explosive Counter", summary:null, attrs:{"power":89,"speed":94,"cardio":84,"chin":90,"wrestling":15,"grappling":12,"fightIq":95} },
+  { id:"sebastian-fundora", name:"Sebastian Fundora", nick:"The Towering Inferno", div:"Super Welterweight", rec:"23-1-1", ko:65, rating:4.2, rank:36, img:"public/Fighter5.png", country:"American", age:29, stance:"Southpaw", trend:13.6, status:"prospect", org:"Boxing", style:"Tall Pressure", summary:null, attrs:{"power":90,"speed":85,"cardio":83,"chin":90,"wrestling":15,"grappling":12,"fightIq":94} },
+  { id:"janibek-alimkhanuly", name:"Janibek Alimkhanuly", nick:null, div:"Middleweight", rec:"17-0-0", ko:71, rating:4.3, rank:29, img:"public/Fighter1.png", country:"Kazakh", age:33, stance:"Southpaw", trend:18.6, status:"ranked", org:"Boxing", style:"Southpaw Puncher", summary:null, attrs:{"power":93,"speed":91,"cardio":81,"chin":91,"wrestling":13,"grappling":11,"fightIq":94} },
+  { id:"gennadiy-golovkin", name:"Gennadiy Golovkin", nick:"GGG", div:"Middleweight", rec:"42-2-1", ko:88, rating:4.0, rank:51, img:"public/Fighter2.png", country:"Kazakh", age:44, stance:"Orthodox", trend:-7.9, status:"retired", org:"Boxing", style:"Jab and Power", summary:null, attrs:{"power":99,"speed":92,"cardio":94,"chin":92,"wrestling":16,"grappling":13,"fightIq":99} },
+  { id:"katie-taylor", name:"Katie Taylor", nick:null, div:"Super Lightweight", rec:"25-1-0", ko:24, rating:4.9, rank:2, img:"public/Fighter3.png", country:"Irish", age:40, stance:"Orthodox", trend:13.2, status:"ranked", org:"Boxing", style:"High-Volume Technician", summary:null, attrs:{"power":80,"speed":97,"cardio":89,"chin":91,"wrestling":15,"grappling":12,"fightIq":98} },
+  { id:"claressa-shields", name:"Claressa Shields", nick:"GWOAT", div:"Heavyweight", rec:"17-0-0", ko:18, rating:4.7, rank:9, img:"public/Fighter4.png", country:"American", age:31, stance:"Orthodox", trend:22.2, status:"ranked", org:"Boxing", style:"Technical Pressure", summary:null, attrs:{"power":78,"speed":94,"cardio":84,"chin":91,"wrestling":13,"grappling":11,"fightIq":96} },
+  { id:"amanda-serrano", name:"Amanda Serrano", nick:"The Real Deal", div:"Featherweight", rec:"47-3-1", ko:66, rating:4.2, rank:32, img:"public/Fighter5.png", country:"Puerto Rican", age:38, stance:"Southpaw", trend:15.3, status:"ranked", org:"Boxing", style:"Aggressive Volume", summary:null, attrs:{"power":93,"speed":97,"cardio":92,"chin":91,"wrestling":16,"grappling":13,"fightIq":99} },
+  { id:"rico-verhoeven", name:"Rico Verhoeven", nick:"The King of Kickboxing", div:"Heavyweight", rec:"63-11-1", ko:33, rating:4.1, rank:42, img:"public/Fighter1.png", country:"Dutch", age:37, stance:"Orthodox", trend:14.3, status:"ranked", org:"Kickboxing", style:"Technical Pressure", summary:null, attrs:{"power":86,"speed":87,"cardio":93,"chin":88,"wrestling":22,"grappling":17,"fightIq":98} },
+  { id:"superbon-singha-mawynn", name:"Superbon Singha Mawynn", nick:null, div:"Featherweight", rec:"118-40-3", ko:34, rating:3.8, rank:65, img:"public/Fighter2.png", country:"Thai", age:36, stance:"Orthodox", trend:3.3, status:"ranked", org:"Kickboxing", style:"Head Kick Specialist", summary:null, attrs:{"power":83,"speed":90,"cardio":86,"chin":84,"wrestling":22,"grappling":17,"fightIq":92} },
+  { id:"rodtang-jitmuangnon", name:"Rodtang Jitmuangnon", nick:"The Iron Man", div:"Flyweight", rec:"270-43-10", ko:23, rating:4.0, rank:52, img:"public/Fighter3.png", country:"Thai", age:29, stance:"Orthodox", trend:12.9, status:"prospect", org:"Muay Thai", style:"Relentless Pressure", summary:null, attrs:{"power":80,"speed":96,"cardio":88,"chin":88,"wrestling":28,"grappling":20,"fightIq":95} },
+  { id:"buakaw-banchamek", name:"Buakaw Banchamek", nick:null, div:"Welterweight", rec:"240-24-12", ko:31, rating:4.2, rank:33, img:"public/Fighter4.png", country:"Thai", age:44, stance:"Orthodox", trend:1.2, status:"ranked", org:"Muay Thai", style:"Classic Muay Thai", summary:null, attrs:{"power":82,"speed":91,"cardio":89,"chin":90,"wrestling":28,"grappling":20,"fightIq":96} },
+  { id:"sitthichai-sitsongpeenong", name:"Sitthichai Sitsongpeenong", nick:"Killer Kid", div:"Lightweight", rec:"138-32-5", ko:29, rating:3.9, rank:58, img:"public/Fighter5.png", country:"Thai", age:35, stance:"Southpaw", trend:8.7, status:"ranked", org:"Kickboxing", style:"Low Kick Counter", summary:null, attrs:{"power":82,"speed":92,"cardio":87,"chin":86,"wrestling":22,"grappling":17,"fightIq":94} }
 ];
 
 const byId = id => FIGHTERS.find(f => f.id === id);
 const DIVISIONS = [...new Set(FIGHTERS.map(f => f.div))].sort();
 
-/* Official all-time 50 — fictional legends */
+/* Display names for the Digital DNA axes. Keys must match FighterAttributes
+   in @frdb/shared-types — anything unmapped falls back to the raw key. */
+const ATTR_LABELS = {
+  power: 'Power', speed: 'Speed', cardio: 'Cardio', chin: 'Chin',
+  wrestling: 'Wrestling', grappling: 'Grappling', fightIq: 'Fight IQ',
+};
+
+/* Pound-for-pound top 50, straight off the ranking algorithm. */
 const GOAT = [
-  ['Rafael "El Rey" Montoya','1994–2011','Middleweight','52-3-1'],
-  ['Duke Halloran','1988–2004','Heavyweight','48-5'],
-  ['Kenji Ishikawa','1997–2014','Lightweight','44-2'],
-  ['Ivan Cross','2016–','Middleweight','26-2'],
-  ['Amara Diallo','2001–2018','Welterweight','41-4'],
-  ['Sergei Volkov','1991–2007','Heavyweight','39-6'],
-  ['Paulo Marchetti','1999–2016','Featherweight','45-3'],
-  ['Grace Okonkwo','2005–2021','Flyweight','33-1'],
-  ['Hector Salas','1986–2002','Bantamweight','50-7'],
-  ['Bo "Ironclad" Whitaker','1993–2009','Light Heavy','37-4'],
-  ['Alex Torres','2018–','Lightweight','28-2'],
-  ['Mikhail Orlov','1990–2006','Welterweight','43-5'],
-  ['Tomas Aguilar','2003–2019','Middleweight','36-6'],
-  ['Nadia Ferreira','2007–2023','Strawweight','31-2'],
-  ['Jonah Steele','1995–2010','Heavyweight','35-8'],
-  ['Lin Zhao','2000–2017','Bantamweight','40-4'],
-  ['Marcus Vale','2017–','Heavyweight','24-1'],
-  ['Ade Kalu','2002–2018','Light Heavy','34-5'],
-  ['Danilo Rossi','1989–2003','Featherweight','42-6'],
-  ['Yusuf Karim','2006–2022','Lightweight','32-4'],
-  ['Vera Lindqvist','2009–','Flyweight','27-2'],
-  ['Big Ray Colton','1984–1999','Heavyweight','44-9'],
-  ['Ravi Chandra','1998–2013','Bantamweight','38-5'],
-  ['Dante Reyes','2019–','Welterweight','22-3'],
-  ['Franco Beltran','1992–2008','Middleweight','36-7'],
-  ['Kim Do-Yun','2004–2020','Featherweight','35-4'],
-  ['Otto Brenner','1987–2001','Light Heavy','33-8'],
-  ['Priya Nair','2010–','Strawweight','25-3'],
-  ['Cassius Dean','1996–2012','Welterweight','37-6'],
-  ['Tomo Nakagawa','2001–2015','Lightweight','34-6'],
-  ['Bruno Cardoso','1994–2009','Heavyweight','31-9'],
-  ['Halima Osei','2008–2024','Flyweight','29-3'],
-  ['Viktor Rusu','1999–2014','Middleweight','33-7'],
-  ['Kofi Mensah','2021–','Light Heavy','19-0'],
-  ['Neil Barrow','1985–1998','Bantamweight','39-10'],
-  ['Sasha Ivanova','2011–','Bantamweight','24-2'],
-  ['Emeka Nwosu','1997–2011','Welterweight','32-8'],
-  ['Rudy Castellan','1990–2005','Featherweight','36-9'],
-  ['Jonas Berg','2005–2021','Heavyweight','28-6'],
-  ['Layla Haddad','2012–','Strawweight','22-2'],
-  ['Chen Wei','1993–2007','Lightweight','35-8'],
-  ['Milo Petrakis','2000–2016','Middleweight','30-8'],
-  ['Sam Okoye','2014–','Light Heavy','23-4'],
-  ['Rosa Delgado','2006–2020','Flyweight','26-5'],
-  ['Anton Kovac','1988–2000','Heavyweight','30-10'],
-  ['Ren Takeda','2022–','Bantamweight','17-1'],
-  ['Bilal Ferran','2003–2017','Welterweight','29-9'],
-  ['Grigor Sahakyan','1996–2010','Featherweight','31-10'],
-  ['Elena Vasquez','2017–','Strawweight','19-3'],
-  ['Omar Haddad','2015–','Featherweight','21-4']
+  ["Naoya Inoue","2012–","Super Bantamweight","31-0-0"],
+  ["Katie Taylor","2016–","Super Lightweight","25-1-0"],
+  ["Terence Crawford","2008–","Super Middleweight","42-0-0"],
+  ["Oleksandr Usyk","2013–","Heavyweight","24-0-0"],
+  ["Gervonta Davis","2013–","Lightweight","30-0-1"],
+  ["Ilia Topuria","2015–","Lightweight","17-0-0"],
+  ["Manny Pacquiao","1995–","Welterweight","62-8-3"],
+  ["Floyd Mayweather Jr","1996–2017","Welterweight","50-0-0"],
+  ["Claressa Shields","2016–","Heavyweight","17-0-0"],
+  ["Jon Jones","2008–","Heavyweight","28-1-0 (1 NC)"],
+  ["Canelo Alvarez","2005–","Super Middleweight","63-3-2"],
+  ["Jesse Rodriguez","2017–","Super Flyweight","22-0-0"],
+  ["Dmitry Bivol","2014–","Light Heavyweight","24-1-0"],
+  ["Cris Cyborg","2005–","Women's Featherweight","27-2-1"],
+  ["Juan Francisco Estrada","2008–","Super Flyweight","44-4-0"],
+  ["Shakur Stevenson","2017–","Lightweight","24-0-0"],
+  ["David Benavidez","2013–","Light Heavyweight","31-0-0"],
+  ["Islam Makhachev","2010–","Lightweight","27-1-0"],
+  ["Jaron Ennis","2016–","Super Welterweight","34-0-0"],
+  ["Gilberto Ramirez","2009–","Cruiserweight","48-1-0"],
+  ["Anthony Joshua","2013–","Heavyweight","28-4-0"],
+  ["Dricus du Plessis","2013–","Middleweight","23-3-0"],
+  ["Artur Beterbiev","2013–","Light Heavyweight","21-1-0"],
+  ["Devin Haney","2015–","Welterweight","32-1-0"],
+  ["Teofimo Lopez","2016–","Super Lightweight","22-1-0"],
+  ["Khabib Nurmagomedov","2008–2020","Lightweight","29-0-0"],
+  ["Vasiliy Lomachenko","2013–2024","Lightweight","18-3-0"],
+  ["Zhang Weili","2013–","Women's Strawweight","26-3-0"],
+  ["Janibek Alimkhanuly","2016–","Middleweight","17-0-0"],
+  ["Errol Spence Jr","2012–","Welterweight","28-2-0"],
+  ["Alex Pereira","2015–","Light Heavyweight","13-3-0"],
+  ["Amanda Serrano","2009–","Featherweight","47-3-1"],
+  ["Buakaw Banchamek","1994–","Welterweight","240-24-12"],
+  ["Georges St-Pierre","2002–2017","Welterweight","26-2-0"],
+  ["Amanda Nunes","2008–2023","Women's Bantamweight","23-5-0"],
+  ["Sebastian Fundora","2016–","Super Welterweight","23-1-1"],
+  ["Kayla Harrison","2018–","Women's Bantamweight","19-1-0"],
+  ["Shavkat Rakhmonov","2014–","Welterweight","19-0-0"],
+  ["Alexandre Pantoja","2009–","Flyweight","30-5-0"],
+  ["Jiri Prochazka","2012–","Light Heavyweight","31-5-1"],
+  ["Demetrious Johnson","2007–2023","Flyweight","25-4-1"],
+  ["Rico Verhoeven","2005–","Heavyweight","63-11-1"],
+  ["Tom Aspinall","2014–","Heavyweight","15-3-0"],
+  ["Valentina Shevchenko","2003–","Women's Flyweight","25-4-1"],
+  ["Magomed Ankalaev","2014–","Light Heavyweight","21-2-1"],
+  ["Ronda Rousey","2011–2016","Women's Bantamweight","12-2-0"],
+  ["Kamaru Usman","2012–","Welterweight","20-4-0"],
+  ["Tyson Fury","2008–2024","Heavyweight","34-2-1"],
+  ["Jose Aldo","2004–2025","Bantamweight","32-9-0"],
+  ["Brandon Moreno","2011–","Flyweight","22-8-2"]
 ];
 
 const NEWS = [
@@ -692,50 +784,195 @@ const NEWS = [
 ];
 
 const EVENTS = [
-  { name:'Apex FC 121: Torres vs Brant', date:'2026-08-29', venue:'Coliseum Arena, Las Vegas', main:'Alex Torres vs Lucas Brant', card:['Torres vs Brant — Lightweight Title','Vasquez vs Nair — Strawweight','Mensah vs Okoye — Light Heavy','Takeda vs Petrov — Bantamweight'], status:'upcoming' },
-  { name:'Vanguard 44: Night of Champions', date:'2026-09-19', venue:'Estádio Central, São Paulo', main:'Dante Reyes vs Kofi Mensah', card:['Reyes vs Mensah — Catchweight','Silva vs Haddad — Featherweight','Bello vs Rusu — Middleweight'], status:'upcoming' },
-  { name:'Circuit 9: Rising', date:'2026-10-10', venue:'Kokugikan Hall, Tokyo', main:'Ren Takeda vs Jae-Woo Park', card:['Takeda vs Park — Bantamweight','Lang vs Delgado — Flyweight','Silva vs Karim — Featherweight'], status:'upcoming' },
-  { name:'Apex FC 124: Year End', date:'2026-12-12', venue:'O2 Arena, London', main:'Ivan Cross vs Tariq Bello', card:['Cross vs Bello — Middleweight Title','Vale vs Varga — Heavyweight','Torres vs Park — Lightweight'], status:'upcoming' },
-  { name:'Apex FC 118: Cross vs Rusu', date:'2026-06-13', venue:'Madison Square Garden, NY', main:'Ivan Cross def. Viktor Rusu (KO R3)', card:['Cross def. Rusu — KO R3','Vale def. Berg — TKO R1','Lang def. Osei — UD'], status:'past', gate:14_200_000, ppv:1_150_000 },
-  { name:'Vanguard 41: Homecoming', date:'2026-05-02', venue:'Arena México, CDMX', main:'Dante Reyes def. Bilal Ferran (SUB R2)', card:['Reyes def. Ferran — SUB R2','Bello def. Petrakis — UD','Mensah def. Kalu — KO R1'], status:'past', gate:8_600_000, ppv:640_000 },
-  { name:'Circuit 9: Origins', date:'2026-03-21', venue:'Saitama Super Arena', main:'Ren Takeda def. Lin Zhao (UD)', card:['Takeda def. Zhao — UD','Park def. Nakagawa — SUB R3','Silva def. Chandra — TKO R2'], status:'past', gate:5_100_000, ppv:410_000 }
+  { name:"Riyadh Season: Night of Champions", date:"2026-09-27", venue:"Kingdom Arena, Riyadh", org:"boxing", sport:"Boxing", main:"Card to be announced", card:[], status:"upcoming" },
+  { name:"UFC 330", date:"2026-09-12", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Card to be announced", card:[], status:"upcoming" },
+  { name:"UFC 321", date:"2025-10-25", venue:"Etihad Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Tom Aspinall vs Ciryl Gane — NC", card:["Tom Aspinall vs Ciryl Gane — NC"], status:"past" },
+  { name:"UFC 320", date:"2025-10-04", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Alex Pereira def. Magomed Ankalaev — KO/TKO R1", card:["Alex Pereira def. Magomed Ankalaev — KO/TKO R1"], status:"past" },
+  { name:"Canelo vs Crawford", date:"2025-09-13", venue:"Allegiant Stadium, Las Vegas", org:"boxing", sport:"Boxing", main:"Terence Crawford def. Canelo Alvarez — DEC", card:["Terence Crawford def. Canelo Alvarez — DEC"], status:"past" },
+  { name:"Taylor vs Serrano III", date:"2025-07-11", venue:"Madison Square Garden, New York", org:"boxing", sport:"Boxing", main:"Katie Taylor def. Amanda Serrano — DEC", card:["Katie Taylor def. Amanda Serrano — DEC"], status:"past" },
+  { name:"UFC 317", date:"2025-06-28", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Ilia Topuria def. Charles Oliveira — KO/TKO R1", card:["Ilia Topuria def. Charles Oliveira — KO/TKO R1"], status:"past" },
+  { name:"Rodriguez vs Estrada", date:"2025-06-28", venue:"Etihad Arena, Abu Dhabi", org:"boxing", sport:"Boxing", main:"Jesse Rodriguez def. Juan Francisco Estrada — DEC", card:["Jesse Rodriguez def. Juan Francisco Estrada — DEC"], status:"past" },
+  { name:"UFC 316", date:"2025-06-07", venue:"Prudential Center, Newark", org:"ufc", sport:"MMA", main:"Merab Dvalishvili def. Sean O'Malley — SUB R3", card:["Merab Dvalishvili def. Sean O'Malley — SUB R3","Kayla Harrison def. Julianna Pena — SUB R2"], status:"past" },
+  { name:"UFC 313", date:"2025-03-08", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Magomed Ankalaev def. Alex Pereira — DEC", card:["Magomed Ankalaev def. Alex Pereira — DEC"], status:"past" },
+  { name:"Beterbiev vs Bivol II", date:"2025-02-22", venue:"Kingdom Arena, Riyadh", org:"boxing", sport:"Boxing", main:"Dmitry Bivol def. Artur Beterbiev — DEC", card:["Dmitry Bivol def. Artur Beterbiev — DEC"], status:"past" },
+  { name:"UFC 312", date:"2025-02-08", venue:"Qudos Bank Arena, Sydney", org:"ufc", sport:"MMA", main:"Dricus du Plessis def. Sean Strickland — DEC", card:["Dricus du Plessis def. Sean Strickland — DEC"], status:"past" },
+  { name:"Usyk vs Fury II", date:"2024-12-21", venue:"Kingdom Arena, Riyadh", org:"boxing", sport:"Boxing", main:"Oleksandr Usyk def. Tyson Fury — DEC", card:["Oleksandr Usyk def. Tyson Fury — DEC"], status:"past" },
+  { name:"UFC 309", date:"2024-11-16", venue:"Madison Square Garden, New York", org:"ufc", sport:"MMA", main:"Jon Jones def. Stipe Miocic — KO/TKO R3", card:["Jon Jones def. Stipe Miocic — KO/TKO R3"], status:"past" },
+  { name:"Taylor vs Serrano II", date:"2024-11-15", venue:"AT&T Stadium, Arlington", org:"boxing", sport:"Boxing", main:"Katie Taylor def. Amanda Serrano — DEC", card:["Katie Taylor def. Amanda Serrano — DEC"], status:"past" },
+  { name:"UFC 308", date:"2024-10-26", venue:"Etihad Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Ilia Topuria def. Max Holloway — KO/TKO R3", card:["Ilia Topuria def. Max Holloway — KO/TKO R3"], status:"past" },
+  { name:"Beterbiev vs Bivol I", date:"2024-10-12", venue:"Kingdom Arena, Riyadh", org:"boxing", sport:"Boxing", main:"Artur Beterbiev def. Dmitry Bivol — DEC", card:["Artur Beterbiev def. Dmitry Bivol — DEC"], status:"past" },
+  { name:"UFC 306", date:"2024-09-14", venue:"Sphere, Las Vegas", org:"ufc", sport:"MMA", main:"Merab Dvalishvili def. Sean O'Malley — DEC", card:["Merab Dvalishvili def. Sean O'Malley — DEC","Valentina Shevchenko def. Alexa Grasso — DEC"], status:"past" },
+  { name:"UFC 305", date:"2024-08-17", venue:"RAC Arena, Perth", org:"ufc", sport:"MMA", main:"Dricus du Plessis def. Israel Adesanya — SUB R4", card:["Dricus du Plessis def. Israel Adesanya — SUB R4"], status:"past" },
+  { name:"UFC 304", date:"2024-07-27", venue:"Co-op Live, Manchester", org:"ufc", sport:"MMA", main:"Belal Muhammad def. Leon Edwards — DEC", card:["Belal Muhammad def. Leon Edwards — DEC"], status:"past" },
+  { name:"UFC 303", date:"2024-06-29", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Alex Pereira def. Jiri Prochazka — KO/TKO R2", card:["Alex Pereira def. Jiri Prochazka — KO/TKO R2"], status:"past" },
+  { name:"UFC 302", date:"2024-06-01", venue:"Prudential Center, Newark", org:"ufc", sport:"MMA", main:"Islam Makhachev def. Dustin Poirier — SUB R5", card:["Islam Makhachev def. Dustin Poirier — SUB R5"], status:"past" },
+  { name:"Usyk vs Fury I", date:"2024-05-18", venue:"Kingdom Arena, Riyadh", org:"boxing", sport:"Boxing", main:"Oleksandr Usyk def. Tyson Fury — DEC", card:["Oleksandr Usyk def. Tyson Fury — DEC"], status:"past" },
+  { name:"UFC 300", date:"2024-04-13", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Max Holloway def. Justin Gaethje — KO/TKO R5", card:["Max Holloway def. Justin Gaethje — KO/TKO R5"], status:"past" },
+  { name:"UFC 298", date:"2024-02-17", venue:"Honda Center, Anaheim", org:"ufc", sport:"MMA", main:"Ilia Topuria def. Alex Volkanovski — KO/TKO R2", card:["Ilia Topuria def. Alex Volkanovski — KO/TKO R2"], status:"past" },
+  { name:"UFC 297", date:"2024-01-20", venue:"Scotiabank Arena, Toronto", org:"ufc", sport:"MMA", main:"Dricus du Plessis def. Sean Strickland — DEC", card:["Dricus du Plessis def. Sean Strickland — DEC"], status:"past" },
+  { name:"UFC 295", date:"2023-11-11", venue:"Madison Square Garden, New York", org:"ufc", sport:"MMA", main:"Alex Pereira def. Jiri Prochazka — KO/TKO R2", card:["Alex Pereira def. Jiri Prochazka — KO/TKO R2"], status:"past" },
+  { name:"UFC 294", date:"2023-10-21", venue:"Etihad Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Islam Makhachev def. Alex Volkanovski — KO/TKO R1", card:["Islam Makhachev def. Alex Volkanovski — KO/TKO R1"], status:"past" },
+  { name:"UFC 293", date:"2023-09-10", venue:"Qudos Bank Arena, Sydney", org:"ufc", sport:"MMA", main:"Sean Strickland def. Israel Adesanya — DEC", card:["Sean Strickland def. Israel Adesanya — DEC"], status:"past" },
+  { name:"UFC 292", date:"2023-08-19", venue:"TD Garden, Boston", org:"ufc", sport:"MMA", main:"Sean O'Malley def. Aljamain Sterling — KO/TKO R2", card:["Sean O'Malley def. Aljamain Sterling — KO/TKO R2"], status:"past" },
+  { name:"UFC 291", date:"2023-07-29", venue:"Delta Center, Salt Lake City", org:"ufc", sport:"MMA", main:"Justin Gaethje def. Dustin Poirier — KO/TKO R2", card:["Justin Gaethje def. Dustin Poirier — KO/TKO R2"], status:"past" },
+  { name:"Crawford vs Spence", date:"2023-07-29", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Terence Crawford def. Errol Spence Jr — KO/TKO R9", card:["Terence Crawford def. Errol Spence Jr — KO/TKO R9"], status:"past" },
+  { name:"UFC 290", date:"2023-07-08", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Alexandre Pantoja def. Brandon Moreno — DEC", card:["Alexandre Pantoja def. Brandon Moreno — DEC","Dricus du Plessis def. Robert Whittaker — KO/TKO R2"], status:"past" },
+  { name:"Haney vs Lomachenko", date:"2023-05-20", venue:"MGM Grand Garden Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Devin Haney def. Vasiliy Lomachenko — DEC", card:["Devin Haney def. Vasiliy Lomachenko — DEC"], status:"past" },
+  { name:"UFC 286", date:"2023-03-18", venue:"The O2 Arena, London", org:"ufc", sport:"MMA", main:"Leon Edwards def. Kamaru Usman — DEC", card:["Leon Edwards def. Kamaru Usman — DEC"], status:"past" },
+  { name:"UFC 285", date:"2023-03-04", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Jon Jones def. Ciryl Gane — SUB R1", card:["Jon Jones def. Ciryl Gane — SUB R1","Alexa Grasso def. Valentina Shevchenko — SUB R4"], status:"past" },
+  { name:"UFC 284", date:"2023-02-12", venue:"RAC Arena, Perth", org:"ufc", sport:"MMA", main:"Islam Makhachev def. Alex Volkanovski — DEC", card:["Islam Makhachev def. Alex Volkanovski — DEC"], status:"past" },
+  { name:"UFC 280", date:"2022-10-22", venue:"Etihad Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Islam Makhachev def. Charles Oliveira — SUB R2", card:["Islam Makhachev def. Charles Oliveira — SUB R2","Aljamain Sterling def. Petr Yan — DEC"], status:"past" },
+  { name:"Canelo vs Golovkin III", date:"2022-09-17", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Canelo Alvarez def. Gennadiy Golovkin — DEC", card:["Canelo Alvarez def. Gennadiy Golovkin — DEC"], status:"past" },
+  { name:"UFC 278", date:"2022-08-20", venue:"Vivint Arena, Salt Lake City", org:"ufc", sport:"MMA", main:"Leon Edwards def. Kamaru Usman — KO/TKO R5", card:["Leon Edwards def. Kamaru Usman — KO/TKO R5"], status:"past" },
+  { name:"Usyk vs Joshua II", date:"2022-08-20", venue:"King Abdullah Sports City, Jeddah", org:"boxing", sport:"Boxing", main:"Oleksandr Usyk def. Anthony Joshua — DEC", card:["Oleksandr Usyk def. Anthony Joshua — DEC"], status:"past" },
+  { name:"UFC 277", date:"2022-07-30", venue:"American Airlines Center, Dallas", org:"ufc", sport:"MMA", main:"Amanda Nunes def. Julianna Pena — DEC", card:["Amanda Nunes def. Julianna Pena — DEC"], status:"past" },
+  { name:"UFC 276", date:"2022-07-02", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Alex Volkanovski def. Max Holloway — DEC", card:["Alex Volkanovski def. Max Holloway — DEC"], status:"past" },
+  { name:"UFC 274", date:"2022-05-07", venue:"Footprint Center, Phoenix", org:"ufc", sport:"MMA", main:"Charles Oliveira def. Justin Gaethje — SUB R1", card:["Charles Oliveira def. Justin Gaethje — SUB R1"], status:"past" },
+  { name:"Bivol vs Canelo", date:"2022-05-07", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Dmitry Bivol def. Canelo Alvarez — DEC", card:["Dmitry Bivol def. Canelo Alvarez — DEC"], status:"past" },
+  { name:"Taylor vs Serrano I", date:"2022-04-30", venue:"Madison Square Garden, New York", org:"boxing", sport:"Boxing", main:"Katie Taylor def. Amanda Serrano — DEC", card:["Katie Taylor def. Amanda Serrano — DEC"], status:"past" },
+  { name:"UFC 271", date:"2022-02-12", venue:"Toyota Center, Houston", org:"ufc", sport:"MMA", main:"Israel Adesanya def. Robert Whittaker — DEC", card:["Israel Adesanya def. Robert Whittaker — DEC"], status:"past" },
+  { name:"UFC 269", date:"2021-12-11", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Charles Oliveira def. Dustin Poirier — SUB R3", card:["Charles Oliveira def. Dustin Poirier — SUB R3","Julianna Pena def. Amanda Nunes — SUB R2"], status:"past" },
+  { name:"UFC 268", date:"2021-11-06", venue:"Madison Square Garden, New York", org:"ufc", sport:"MMA", main:"Rose Namajunas def. Zhang Weili — DEC", card:["Rose Namajunas def. Zhang Weili — DEC"], status:"past" },
+  { name:"Fury vs Wilder III", date:"2021-10-09", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Tyson Fury def. Deontay Wilder — KO/TKO R11", card:["Tyson Fury def. Deontay Wilder — KO/TKO R11"], status:"past" },
+  { name:"Usyk vs Joshua I", date:"2021-09-25", venue:"Tottenham Hotspur Stadium, London", org:"boxing", sport:"Boxing", main:"Oleksandr Usyk def. Anthony Joshua — DEC", card:["Oleksandr Usyk def. Anthony Joshua — DEC"], status:"past" },
+  { name:"UFC 264", date:"2021-07-10", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Dustin Poirier def. Conor McGregor — KO/TKO R1", card:["Dustin Poirier def. Conor McGregor — KO/TKO R1"], status:"past" },
+  { name:"UFC 261", date:"2021-04-24", venue:"VyStar Veterans Memorial Arena, Jacksonville", org:"ufc", sport:"MMA", main:"Rose Namajunas def. Zhang Weili — KO/TKO R1", card:["Rose Namajunas def. Zhang Weili — KO/TKO R1"], status:"past" },
+  { name:"UFC 259", date:"2021-03-06", venue:"UFC APEX, Las Vegas", org:"ufc", sport:"MMA", main:"Aljamain Sterling def. Petr Yan — DQ R4", card:["Aljamain Sterling def. Petr Yan — DQ R4"], status:"past" },
+  { name:"UFC 257", date:"2021-01-23", venue:"Etihad Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Dustin Poirier def. Conor McGregor — KO/TKO R2", card:["Dustin Poirier def. Conor McGregor — KO/TKO R2"], status:"past" },
+  { name:"UFC 254", date:"2020-10-24", venue:"Flash Forum, Abu Dhabi", org:"ufc", sport:"MMA", main:"Khabib Nurmagomedov def. Justin Gaethje — SUB R2", card:["Khabib Nurmagomedov def. Justin Gaethje — SUB R2"], status:"past" },
+  { name:"Lopez vs Lomachenko", date:"2020-10-17", venue:"MGM Grand Conference Center, Las Vegas", org:"boxing", sport:"Boxing", main:"Teofimo Lopez def. Vasiliy Lomachenko — DEC", card:["Teofimo Lopez def. Vasiliy Lomachenko — DEC"], status:"past" },
+  { name:"UFC 252", date:"2020-08-15", venue:"UFC APEX, Las Vegas", org:"ufc", sport:"MMA", main:"Stipe Miocic def. Daniel Cormier — DEC", card:["Stipe Miocic def. Daniel Cormier — DEC"], status:"past" },
+  { name:"UFC 251", date:"2020-07-12", venue:"Flash Forum, Abu Dhabi", org:"ufc", sport:"MMA", main:"Alex Volkanovski def. Max Holloway — DEC", card:["Alex Volkanovski def. Max Holloway — DEC"], status:"past" },
+  { name:"Fury vs Wilder II", date:"2020-02-22", venue:"MGM Grand Garden Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Tyson Fury def. Deontay Wilder — KO/TKO R7", card:["Tyson Fury def. Deontay Wilder — KO/TKO R7"], status:"past" },
+  { name:"UFC 245", date:"2019-12-14", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Alex Volkanovski def. Max Holloway — DEC", card:["Alex Volkanovski def. Max Holloway — DEC"], status:"past" },
+  { name:"UFC 243", date:"2019-10-06", venue:"Marvel Stadium, Melbourne", org:"ufc", sport:"MMA", main:"Israel Adesanya def. Robert Whittaker — KO/TKO R2", card:["Israel Adesanya def. Robert Whittaker — KO/TKO R2"], status:"past" },
+  { name:"UFC 242", date:"2019-09-07", venue:"The Arena, Abu Dhabi", org:"ufc", sport:"MMA", main:"Khabib Nurmagomedov def. Dustin Poirier — SUB R3", card:["Khabib Nurmagomedov def. Dustin Poirier — SUB R3"], status:"past" },
+  { name:"UFC 241", date:"2019-08-17", venue:"Honda Center, Anaheim", org:"ufc", sport:"MMA", main:"Stipe Miocic def. Daniel Cormier — KO/TKO R4", card:["Stipe Miocic def. Daniel Cormier — KO/TKO R4"], status:"past" },
+  { name:"UFC 232", date:"2018-12-29", venue:"The Forum, Inglewood", org:"ufc", sport:"MMA", main:"Amanda Nunes def. Cris Cyborg — KO/TKO R1", card:["Amanda Nunes def. Cris Cyborg — KO/TKO R1"], status:"past" },
+  { name:"Fury vs Wilder I", date:"2018-12-01", venue:"Staples Center, Los Angeles", org:"boxing", sport:"Boxing", main:"Tyson Fury vs Deontay Wilder — DEC", card:["Tyson Fury vs Deontay Wilder — DEC"], status:"past" },
+  { name:"UFC 229", date:"2018-10-06", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Khabib Nurmagomedov def. Conor McGregor — SUB R4", card:["Khabib Nurmagomedov def. Conor McGregor — SUB R4"], status:"past" },
+  { name:"Canelo vs Golovkin II", date:"2018-09-15", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Canelo Alvarez def. Gennadiy Golovkin — DEC", card:["Canelo Alvarez def. Gennadiy Golovkin — DEC"], status:"past" },
+  { name:"UFC 226", date:"2018-07-07", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Daniel Cormier def. Stipe Miocic — KO/TKO R1", card:["Daniel Cormier def. Stipe Miocic — KO/TKO R1"], status:"past" },
+  { name:"Canelo vs Golovkin I", date:"2017-09-16", venue:"T-Mobile Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Canelo Alvarez vs Gennadiy Golovkin — DEC", card:["Canelo Alvarez vs Gennadiy Golovkin — DEC"], status:"past" },
+  { name:"UFC 215", date:"2017-09-09", venue:"Rogers Place, Edmonton", org:"ufc", sport:"MMA", main:"Amanda Nunes def. Valentina Shevchenko — DEC", card:["Amanda Nunes def. Valentina Shevchenko — DEC"], status:"past" },
+  { name:"UFC 212", date:"2017-06-03", venue:"Jeunesse Arena, Rio de Janeiro", org:"ufc", sport:"MMA", main:"Max Holloway def. Jose Aldo — KO/TKO R3", card:["Max Holloway def. Jose Aldo — KO/TKO R3"], status:"past" },
+  { name:"UFC 207", date:"2016-12-30", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Amanda Nunes def. Ronda Rousey — KO/TKO R1", card:["Amanda Nunes def. Ronda Rousey — KO/TKO R1"], status:"past" },
+  { name:"UFC 200", date:"2016-07-09", venue:"T-Mobile Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Daniel Cormier def. Anderson Silva — DEC", card:["Daniel Cormier def. Anderson Silva — DEC"], status:"past" },
+  { name:"UFC 194", date:"2015-12-12", venue:"MGM Grand Garden Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Conor McGregor def. Jose Aldo — KO/TKO R1", card:["Conor McGregor def. Jose Aldo — KO/TKO R1"], status:"past" },
+  { name:"Mayweather vs Pacquiao", date:"2015-05-02", venue:"MGM Grand Garden Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Floyd Mayweather Jr def. Manny Pacquiao — DEC", card:["Floyd Mayweather Jr def. Manny Pacquiao — DEC"], status:"past" },
+  { name:"UFC 182", date:"2015-01-03", venue:"MGM Grand Garden Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Jon Jones def. Daniel Cormier — DEC", card:["Jon Jones def. Daniel Cormier — DEC"], status:"past" },
+  { name:"UFC 178", date:"2014-09-27", venue:"MGM Grand Garden Arena, Las Vegas", org:"ufc", sport:"MMA", main:"Conor McGregor def. Dustin Poirier — KO/TKO R1", card:["Conor McGregor def. Dustin Poirier — KO/TKO R1"], status:"past" },
+  { name:"Mayweather vs Canelo", date:"2013-09-14", venue:"MGM Grand Garden Arena, Las Vegas", org:"boxing", sport:"Boxing", main:"Floyd Mayweather Jr def. Canelo Alvarez — DEC", card:["Floyd Mayweather Jr def. Canelo Alvarez — DEC"], status:"past" }
 ];
 
 const POPULAR_FIGHTS = [
-  { a:'Ivan Cross', b:'Viktor Rusu', event:'Apex FC 118', year:2026, rating:4.9, votes:18420, result:'KO R3', tag:'Instant Classic' },
-  { a:'Rafael Montoya', b:'Duke Halloran', event:'Legacy 7', year:2003, rating:4.9, votes:41200, result:'UD', tag:'All-Time Great' },
-  { a:'Alex Torres', b:'Yusuf Karim', event:'Apex FC 109', year:2025, rating:4.8, votes:22150, result:'TKO R5', tag:'Comeback' },
-  { a:'Dante Reyes', b:'Cassius Dean', event:'Vanguard 38', year:2025, rating:4.7, votes:16880, result:'SUB R4', tag:'Submission Of The Year' },
-  { a:'Kenji Ishikawa', b:'Chen Wei', event:'Legacy 12', year:2006, rating:4.8, votes:33400, result:'SD', tag:'Trilogy Closer' },
-  { a:'Grace Okonkwo', b:'Nadia Ferreira', event:'Apex FC 88', year:2019, rating:4.8, votes:27600, result:'UD', tag:'Historic' },
-  { a:'Kofi Mensah', b:'Ade Kalu', event:'Vanguard 41', year:2026, rating:4.6, votes:12040, result:'KO R1', tag:'Highlight Reel' },
-  { a:'Marcus Vale', b:'Jonas Berg', event:'Apex FC 118', year:2026, rating:4.5, votes:11300, result:'TKO R1', tag:'Statement' }
+  { a:"Tom Aspinall", b:"Ciryl Gane", event:"UFC 321", year:2025, rating:4.7, votes:35574, result:"NC R1", tag:"Title Fight" },
+  { a:"Alex Pereira", b:"Magomed Ankalaev", event:"UFC 320", year:2025, rating:4.7, votes:35268, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Terence Crawford", b:"Canelo Alvarez", event:"Canelo vs Crawford", year:2025, rating:4.5, votes:24184, result:"DEC", tag:"Title Fight" },
+  { a:"Katie Taylor", b:"Amanda Serrano", event:"Taylor vs Serrano III", year:2025, rating:4.2, votes:11536, result:"DEC", tag:"Title Fight" },
+  { a:"Ilia Topuria", b:"Charles Oliveira", event:"UFC 317", year:2025, rating:4.9, votes:41286, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Jesse Rodriguez", b:"Juan Francisco Estrada", event:"Rodriguez vs Estrada", year:2025, rating:4.6, votes:27278, result:"DEC", tag:"Title Fight" },
+  { a:"Merab Dvalishvili", b:"Sean O'Malley", event:"UFC 316", year:2025, rating:4.3, votes:18370, result:"SUB R3", tag:"Title Fight" },
+  { a:"Kayla Harrison", b:"Julianna Pena", event:"UFC 316", year:2025, rating:4.5, votes:25238, result:"SUB R2", tag:"Title Fight" },
+  { a:"Magomed Ankalaev", b:"Alex Pereira", event:"UFC 313", year:2025, rating:4.7, votes:35268, result:"DEC", tag:"Title Fight" },
+  { a:"Dmitry Bivol", b:"Artur Beterbiev", event:"Beterbiev vs Bivol II", year:2025, rating:4.4, votes:20716, result:"DEC", tag:"Title Fight" },
+  { a:"Dricus du Plessis", b:"Sean Strickland", event:"UFC 312", year:2025, rating:4.3, votes:17316, result:"DEC", tag:"Title Fight" },
+  { a:"Oleksandr Usyk", b:"Tyson Fury", event:"Usyk vs Fury II", year:2024, rating:4.5, votes:24422, result:"DEC", tag:"Title Fight" },
+  { a:"Jon Jones", b:"Stipe Miocic", event:"UFC 309", year:2024, rating:4.8, votes:39348, result:"KO/TKO R3", tag:"Title Fight" },
+  { a:"Katie Taylor", b:"Amanda Serrano", event:"Taylor vs Serrano II", year:2024, rating:4.2, votes:11536, result:"DEC", tag:"Title Fight" },
+  { a:"Ilia Topuria", b:"Max Holloway", event:"UFC 308", year:2024, rating:4.9, votes:41422, result:"KO/TKO R3", tag:"Title Fight" },
+  { a:"Artur Beterbiev", b:"Dmitry Bivol", event:"Beterbiev vs Bivol I", year:2024, rating:4.4, votes:20716, result:"DEC", tag:"Title Fight" },
+  { a:"Merab Dvalishvili", b:"Sean O'Malley", event:"UFC 306", year:2024, rating:4.3, votes:18370, result:"DEC", tag:"Title Fight" },
+  { a:"Valentina Shevchenko", b:"Alexa Grasso", event:"UFC 306", year:2024, rating:4.3, votes:14494, result:"DEC", tag:"Title Fight" },
+  { a:"Dricus du Plessis", b:"Israel Adesanya", event:"UFC 305", year:2024, rating:4.2, votes:11332, result:"SUB R4", tag:"Title Fight" },
+  { a:"Belal Muhammad", b:"Leon Edwards", event:"UFC 304", year:2024, rating:4.3, votes:18098, result:"DEC", tag:"Title Fight" },
+  { a:"Alex Pereira", b:"Jiri Prochazka", event:"UFC 303", year:2024, rating:4.7, votes:32004, result:"KO/TKO R2", tag:"Title Fight" },
+  { a:"Islam Makhachev", b:"Dustin Poirier", event:"UFC 302", year:2024, rating:4.4, votes:22756, result:"SUB R5", tag:"Title Fight" },
+  { a:"Oleksandr Usyk", b:"Tyson Fury", event:"Usyk vs Fury I", year:2024, rating:4.5, votes:24422, result:"DEC", tag:"Title Fight" },
+  { a:"Ilia Topuria", b:"Alex Volkanovski", event:"UFC 298", year:2024, rating:4.2, votes:12182, result:"KO/TKO R2", tag:"Title Fight" },
+  { a:"Dricus du Plessis", b:"Sean Strickland", event:"UFC 297", year:2024, rating:4.3, votes:17316, result:"DEC", tag:"Title Fight" },
+  { a:"Alex Pereira", b:"Jiri Prochazka", event:"UFC 295", year:2023, rating:4.7, votes:32004, result:"KO/TKO R2", tag:"Title Fight" },
+  { a:"Islam Makhachev", b:"Alex Volkanovski", event:"UFC 294", year:2023, rating:4.5, votes:25340, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Sean Strickland", b:"Israel Adesanya", event:"UFC 293", year:2023, rating:4.6, votes:28094, result:"DEC", tag:"Title Fight" },
+  { a:"Sean O'Malley", b:"Aljamain Sterling", event:"UFC 292", year:2023, rating:4.3, votes:15140, result:"KO/TKO R2", tag:"Title Fight" },
+  { a:"Justin Gaethje", b:"Dustin Poirier", event:"UFC 291", year:2023, rating:4.5, votes:24082, result:"KO/TKO R2", tag:"Main Event" },
+  { a:"Terence Crawford", b:"Errol Spence Jr", event:"Crawford vs Spence", year:2023, rating:4.6, votes:27448, result:"KO/TKO R9", tag:"Title Fight" },
+  { a:"Alexandre Pantoja", b:"Brandon Moreno", event:"UFC 290", year:2023, rating:4.8, votes:36492, result:"DEC", tag:"Title Fight" },
+  { a:"Devin Haney", b:"Vasiliy Lomachenko", event:"Haney vs Lomachenko", year:2023, rating:4.5, votes:24048, result:"DEC", tag:"Title Fight" },
+  { a:"Leon Edwards", b:"Kamaru Usman", event:"UFC 286", year:2023, rating:4.6, votes:27652, result:"DEC", tag:"Title Fight" },
+  { a:"Jon Jones", b:"Ciryl Gane", event:"UFC 285", year:2023, rating:4.4, votes:20070, result:"SUB R1", tag:"Title Fight" },
+  { a:"Alexa Grasso", b:"Valentina Shevchenko", event:"UFC 285", year:2023, rating:4.3, votes:14494, result:"SUB R4", tag:"Title Fight" },
+  { a:"Islam Makhachev", b:"Alex Volkanovski", event:"UFC 284", year:2023, rating:4.5, votes:25340, result:"DEC", tag:"Title Fight" },
+  { a:"Islam Makhachev", b:"Charles Oliveira", event:"UFC 280", year:2022, rating:4.1, votes:8748, result:"SUB R2", tag:"Title Fight" },
+  { a:"Aljamain Sterling", b:"Petr Yan", event:"UFC 280", year:2022, rating:4.5, votes:23674, result:"DEC", tag:"Title Fight" },
+  { a:"Canelo Alvarez", b:"Gennadiy Golovkin", event:"Canelo vs Golovkin III", year:2022, rating:4.7, votes:34112, result:"DEC", tag:"Title Fight" },
+  { a:"Leon Edwards", b:"Kamaru Usman", event:"UFC 278", year:2022, rating:4.6, votes:27652, result:"KO/TKO R5", tag:"Title Fight" },
+  { a:"Oleksandr Usyk", b:"Anthony Joshua", event:"Usyk vs Joshua II", year:2022, rating:4.6, votes:27618, result:"DEC", tag:"Title Fight" },
+  { a:"Amanda Nunes", b:"Julianna Pena", event:"UFC 277", year:2022, rating:4.3, votes:16908, result:"DEC", tag:"Title Fight" },
+  { a:"Alex Volkanovski", b:"Max Holloway", event:"UFC 276", year:2022, rating:4.2, votes:13134, result:"DEC", tag:"Title Fight" },
+  { a:"Charles Oliveira", b:"Justin Gaethje", event:"UFC 274", year:2022, rating:4.5, votes:23674, result:"SUB R1", tag:"Highlight Reel" },
+  { a:"Dmitry Bivol", b:"Canelo Alvarez", event:"Bivol vs Canelo", year:2022, rating:4.4, votes:22246, result:"DEC", tag:"Title Fight" },
+  { a:"Katie Taylor", b:"Amanda Serrano", event:"Taylor vs Serrano I", year:2022, rating:4.2, votes:11536, result:"DEC", tag:"Title Fight" },
+  { a:"Israel Adesanya", b:"Robert Whittaker", event:"UFC 271", year:2022, rating:4.5, votes:24728, result:"DEC", tag:"Title Fight" },
+  { a:"Charles Oliveira", b:"Dustin Poirier", event:"UFC 269", year:2021, rating:4.7, votes:35574, result:"SUB R3", tag:"Title Fight" },
+  { a:"Julianna Pena", b:"Amanda Nunes", event:"UFC 269", year:2021, rating:4.3, votes:16908, result:"SUB R2", tag:"Title Fight" },
+  { a:"Rose Namajunas", b:"Zhang Weili", event:"UFC 268", year:2021, rating:4.8, votes:39824, result:"DEC", tag:"Title Fight" },
+  { a:"Tyson Fury", b:"Deontay Wilder", event:"Fury vs Wilder III", year:2021, rating:4.2, votes:14222, result:"KO/TKO R11", tag:"Title Fight" },
+  { a:"Oleksandr Usyk", b:"Anthony Joshua", event:"Usyk vs Joshua I", year:2021, rating:4.6, votes:27618, result:"DEC", tag:"Title Fight" },
+  { a:"Dustin Poirier", b:"Conor McGregor", event:"UFC 264", year:2021, rating:4.2, votes:12590, result:"KO/TKO R1", tag:"Main Event" },
+  { a:"Rose Namajunas", b:"Zhang Weili", event:"UFC 261", year:2021, rating:4.8, votes:39824, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Aljamain Sterling", b:"Petr Yan", event:"UFC 259", year:2021, rating:4.5, votes:23674, result:"DQ R4", tag:"Title Fight" },
+  { a:"Dustin Poirier", b:"Conor McGregor", event:"UFC 257", year:2021, rating:4.2, votes:12590, result:"KO/TKO R2", tag:"Main Event" },
+  { a:"Khabib Nurmagomedov", b:"Justin Gaethje", event:"UFC 254", year:2020, rating:4.2, votes:11298, result:"SUB R2", tag:"Title Fight" },
+  { a:"Teofimo Lopez", b:"Vasiliy Lomachenko", event:"Lopez vs Lomachenko", year:2020, rating:4.4, votes:21464, result:"DEC", tag:"Title Fight" },
+  { a:"Stipe Miocic", b:"Daniel Cormier", event:"UFC 252", year:2020, rating:4.5, votes:23708, result:"DEC", tag:"Title Fight" },
+  { a:"Alex Volkanovski", b:"Max Holloway", event:"UFC 251", year:2020, rating:4.2, votes:13134, result:"DEC", tag:"Title Fight" },
+  { a:"Tyson Fury", b:"Deontay Wilder", event:"Fury vs Wilder II", year:2020, rating:4.2, votes:14222, result:"KO/TKO R7", tag:"Title Fight" },
+  { a:"Alex Volkanovski", b:"Max Holloway", event:"UFC 245", year:2019, rating:4.2, votes:13134, result:"DEC", tag:"Title Fight" },
+  { a:"Israel Adesanya", b:"Robert Whittaker", event:"UFC 243", year:2019, rating:4.5, votes:24728, result:"KO/TKO R2", tag:"Title Fight" },
+  { a:"Khabib Nurmagomedov", b:"Dustin Poirier", event:"UFC 242", year:2019, rating:4.2, votes:12726, result:"SUB R3", tag:"Title Fight" },
+  { a:"Stipe Miocic", b:"Daniel Cormier", event:"UFC 241", year:2019, rating:4.5, votes:23708, result:"KO/TKO R4", tag:"Title Fight" },
+  { a:"Amanda Nunes", b:"Cris Cyborg", event:"UFC 232", year:2018, rating:4.7, votes:32038, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Tyson Fury", b:"Deontay Wilder", event:"Fury vs Wilder I", year:2018, rating:4.2, votes:14222, result:"DEC", tag:"Title Fight" },
+  { a:"Khabib Nurmagomedov", b:"Conor McGregor", event:"UFC 229", year:2018, rating:4.5, votes:24422, result:"SUB R4", tag:"Title Fight" },
+  { a:"Canelo Alvarez", b:"Gennadiy Golovkin", event:"Canelo vs Golovkin II", year:2018, rating:4.7, votes:34112, result:"DEC", tag:"Title Fight" },
+  { a:"Daniel Cormier", b:"Stipe Miocic", event:"UFC 226", year:2018, rating:4.5, votes:23708, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Canelo Alvarez", b:"Gennadiy Golovkin", event:"Canelo vs Golovkin I", year:2017, rating:4.7, votes:34112, result:"DEC", tag:"Title Fight" },
+  { a:"Amanda Nunes", b:"Valentina Shevchenko", event:"UFC 215", year:2017, rating:4.8, votes:37852, result:"DEC", tag:"Title Fight" },
+  { a:"Max Holloway", b:"Jose Aldo", event:"UFC 212", year:2017, rating:4.3, votes:18438, result:"KO/TKO R3", tag:"Title Fight" },
+  { a:"Amanda Nunes", b:"Ronda Rousey", event:"UFC 207", year:2016, rating:4.8, votes:38022, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Daniel Cormier", b:"Anderson Silva", event:"UFC 200", year:2016, rating:4.3, votes:18132, result:"DEC", tag:"Main Event" },
+  { a:"Conor McGregor", b:"Jose Aldo", event:"UFC 194", year:2015, rating:4.5, votes:24286, result:"KO/TKO R1", tag:"Title Fight" },
+  { a:"Floyd Mayweather Jr", b:"Manny Pacquiao", event:"Mayweather vs Pacquiao", year:2015, rating:4.8, votes:37240, result:"DEC", tag:"Title Fight" },
+  { a:"Jon Jones", b:"Daniel Cormier", event:"UFC 182", year:2015, rating:4.6, votes:30814, result:"DEC", tag:"Title Fight" },
+  { a:"Floyd Mayweather Jr", b:"Canelo Alvarez", event:"Mayweather vs Canelo", year:2013, rating:4.2, votes:11978, result:"DEC", tag:"Title Fight" }
 ];
+
 
 const AWARDS = {
   2026: [
-    { cat:'Fighter of the Year', win:'Ivan Cross', note:'Three title defences, zero rounds lost.', img:'Fighter4.png' },
-    { cat:'Fight of the Year', win:'Cross vs Rusu', note:'Apex FC 118 · KO R3 after a 14-minute war.', img:'Fighter3.png' },
-    { cat:'Knockout of the Year', win:'Kofi Mensah', note:'Spinning back elbow, 41 seconds.', img:'Fighter5.png' },
-    { cat:'Submission of the Year', win:'Jae-Woo Park', note:'Standing arm-triangle from the clinch.', img:'Fighter3.png' },
-    { cat:'Breakthrough of the Year', win:'Sofia Lang', note:'15-0 and a title shot inside 18 months.', img:'Fighter5.png' },
-    { cat:'Comeback of the Year', win:'Omar Haddad', note:'Down 3 rounds, finished in the 5th.', img:'Fighter1.png' }
+    { cat:'Fighter of the Year', win:'Ivan Cross', note:'Three title defences, zero rounds lost.', img:'public/Fighter4.png' },
+    { cat:'Fight of the Year', win:'Cross vs Rusu', note:'Apex FC 118 · KO R3 after a 14-minute war.', img:'public/Fighter3.png' },
+    { cat:'Knockout of the Year', win:'Kofi Mensah', note:'Spinning back elbow, 41 seconds.', img:'public/Fighter5.png' },
+    { cat:'Submission of the Year', win:'Jae-Woo Park', note:'Standing arm-triangle from the clinch.', img:'public/Fighter3.png' },
+    { cat:'Breakthrough of the Year', win:'Sofia Lang', note:'15-0 and a title shot inside 18 months.', img:'public/Fighter5.png' },
+    { cat:'Comeback of the Year', win:'Omar Haddad', note:'Down 3 rounds, finished in the 5th.', img:'public/Fighter1.png' }
   ],
   2025: [
-    { cat:'Fighter of the Year', win:'Alex Torres', note:'Unified at lightweight in nine months.', img:'Fighter2.png' },
-    { cat:'Fight of the Year', win:'Torres vs Karim', note:'Apex FC 109 · TKO R5.', img:'Fighter2.png' },
-    { cat:'Knockout of the Year', win:'Marcus Vale', note:'One-punch counter, 22 seconds.', img:'Fighter1.png' },
-    { cat:'Submission of the Year', win:'Dante Reyes', note:'Flying triangle off a failed takedown.', img:'Fighter3.png' },
-    { cat:'Breakthrough of the Year', win:'Ren Takeda', note:'Six wins, six finishes.', img:'Fighter3.png' },
-    { cat:'Comeback of the Year', win:'Sam Okoye', note:'Return from an 18-month layoff to a title eliminator.', img:'Fighter4.png' }
+    { cat:'Fighter of the Year', win:'Alex Torres', note:'Unified at lightweight in nine months.', img:'public/Fighter2.png' },
+    { cat:'Fight of the Year', win:'Torres vs Karim', note:'Apex FC 109 · TKO R5.', img:'public/Fighter2.png' },
+    { cat:'Knockout of the Year', win:'Marcus Vale', note:'One-punch counter, 22 seconds.', img:'public/Fighter1.png' },
+    { cat:'Submission of the Year', win:'Dante Reyes', note:'Flying triangle off a failed takedown.', img:'public/Fighter3.png' },
+    { cat:'Breakthrough of the Year', win:'Ren Takeda', note:'Six wins, six finishes.', img:'public/Fighter3.png' },
+    { cat:'Comeback of the Year', win:'Sam Okoye', note:'Return from an 18-month layoff to a title eliminator.', img:'public/Fighter4.png' }
   ],
   2024: [
-    { cat:'Fighter of the Year', win:'Elena Vasquez', note:'Four wins, three finishes.', img:'Fighter5.png' },
-    { cat:'Fight of the Year', win:'Vasquez vs Nair', note:'Apex FC 96 · split decision.', img:'Fighter5.png' },
-    { cat:'Knockout of the Year', win:'Nikolai Varga', note:'Overhand right, 11 seconds.', img:'Fighter1.png' },
-    { cat:'Submission of the Year', win:'Yuri Petrov', note:'Twister from back mount.', img:'Fighter1.png' },
-    { cat:'Breakthrough of the Year', win:'Tariq Bello', note:'From regional to top-10 in a year.', img:'Fighter2.png' },
-    { cat:'Comeback of the Year', win:'Lucas Brant', note:'Three straight after two losses.', img:'Fighter4.png' }
+    { cat:'Fighter of the Year', win:'Elena Vasquez', note:'Four wins, three finishes.', img:'public/Fighter5.png' },
+    { cat:'Fight of the Year', win:'Vasquez vs Nair', note:'Apex FC 96 · split decision.', img:'public/Fighter5.png' },
+    { cat:'Knockout of the Year', win:'Nikolai Varga', note:'Overhand right, 11 seconds.', img:'public/Fighter1.png' },
+    { cat:'Submission of the Year', win:'Yuri Petrov', note:'Twister from back mount.', img:'public/Fighter1.png' },
+    { cat:'Breakthrough of the Year', win:'Tariq Bello', note:'From regional to top-10 in a year.', img:'public/Fighter2.png' },
+    { cat:'Comeback of the Year', win:'Lucas Brant', note:'Three straight after two losses.', img:'public/Fighter4.png' }
   ]
 };
 
@@ -773,28 +1010,31 @@ const BIZ_NEWS = [
   { title:'Streaming bundle drives 41% subscriber lift', body:'Bundling numbered events with the archive library cut churn nearly in half across the first two quarters.', tag:'Media' }
 ];
 
+/* Cross-era hypotheticals: each pairs a top-ranked active fighter with a
+   retired one from the same sport who never met them in the fight log.
+   `books` is demo engagement, not a real tally. */
 const DREAM_FIGHTS = [
-  { a:'Ivan Cross', b:'Rafael Montoya', books:8420 },
-  { a:'Alex Torres', b:'Kenji Ishikawa', books:7180 },
-  { a:'Marcus Vale', b:'Duke Halloran', books:6640 },
-  { a:'Dante Reyes', b:'Amara Diallo', books:5210 },
-  { a:'Kofi Mensah', b:'Bo Whitaker', books:4890 },
-  { a:'Sofia Lang', b:'Grace Okonkwo', books:4330 }
+  { a:'Ilia Topuria', b:'Khabib Nurmagomedov', books:8420 },
+  { a:'Jon Jones', b:'Georges St-Pierre', books:7180 },
+  { a:'Naoya Inoue', b:'Floyd Mayweather Jr', books:6640 },
+  { a:'Islam Makhachev', b:'Khabib Nurmagomedov', books:5210 },
+  { a:'Katie Taylor', b:'Vasiliy Lomachenko', books:4890 },
+  { a:'Terence Crawford', b:'Tyson Fury', books:4330 }
 ];
 
 const SEED_POLLS = [
-  { id:'p1', q:'Who wins at Apex FC 121?', opts:['Alex Torres','Lucas Brant'], votes:[4210, 1890] },
-  { id:'p2', q:'Greatest of all time?', opts:['Rafael Montoya','Duke Halloran','Kenji Ishikawa','Ivan Cross'], votes:[3120, 2210, 1980, 2640] },
+  { id:'p1', q:'Who is the pound-for-pound number one?', opts:['Naoya Inoue','Terence Crawford','Oleksandr Usyk','Ilia Topuria'], votes:[4210, 1890, 2310, 1740] },
+  { id:'p2', q:'Greatest of all time?', opts:['Jon Jones','Floyd Mayweather Jr','Georges St-Pierre','Khabib Nurmagomedov'], votes:[3120, 2210, 1980, 2640] },
   { id:'p3', q:'Should open scoring be adopted at all levels?', opts:['Yes, immediately','Yes, but title fights only','No'], votes:[5410, 1720, 940] },
   { id:'p4', q:'Best division in the sport right now?', opts:['Lightweight','Middleweight','Bantamweight','Flyweight'], votes:[3890, 2740, 1620, 1180] }
 ];
 
 const SEED_POSTS = [
-  { id:'s1', user:'CageSideCarl', handle:'@cagesidecarl', avatar:'Fighter1.png', tag:'Debate', body:'Putting Cross above Montoya is recency bias and everyone knows it. Montoya beat five hall of famers. Cross has beaten one.', ts:Date.now()-1800e3, likes:412, reposts:88, replies:63 },
-  { id:'s2', user:'Ana Ruiz', handle:'@anaruiz', avatar:'Fighter5.png', tag:'Lists', body:'My top 50 is up. Yes, Takeda is in it at 46. He is 17-1 with the best grappling in the sport and I will not be taking questions.', ts:Date.now()-5400e3, likes:288, reposts:41, replies:97 },
-  { id:'s3', user:'Fight Metrics', handle:'@fightmetrics', avatar:'Fighter3.png', tag:'Analysis', body:'Reyes landed 6.4 significant strikes per minute over his last three. Only two fighters in the era have sustained that with 60%+ takedown defence.', ts:Date.now()-9000e3, likes:751, reposts:203, replies:44 },
-  { id:'s4', user:'Duke Fan 88', handle:'@duke88', avatar:'Fighter4.png', tag:'Debate', body:'Hot take: gate receipts matter more than PPV buys for judging a fighter\u2019s drawing power. Buys are bundled now. Seats are real.', ts:Date.now()-14400e3, likes:196, reposts:57, replies:81 },
-  { id:'s5', user:'Mika T', handle:'@mikat', avatar:'Fighter2.png', tag:'Fantasy', body:'Ran the sim on Mensah vs Whitaker 30 times. Mensah wins by KO in the first two rounds or loses a decision. There is no middle outcome.', ts:Date.now()-21600e3, likes:334, reposts:72, replies:29 }
+  { id:'s1', user:'CageSideCarl', handle:'@cagesidecarl', avatar:'public/Fighter1.png', tag:'Debate', body:'Putting Cross above Montoya is recency bias and everyone knows it. Montoya beat five hall of famers. Cross has beaten one.', ts:Date.now()-1800e3, likes:412, reposts:88, replies:63 },
+  { id:'s2', user:'Ana Ruiz', handle:'@anaruiz', avatar:'public/Fighter5.png', tag:'Lists', body:'My top 50 is up. Yes, Takeda is in it at 46. He is 17-1 with the best grappling in the sport and I will not be taking questions.', ts:Date.now()-5400e3, likes:288, reposts:41, replies:97 },
+  { id:'s3', user:'Fight Metrics', handle:'@fightmetrics', avatar:'public/Fighter3.png', tag:'Analysis', body:'Reyes landed 6.4 significant strikes per minute over his last three. Only two fighters in the era have sustained that with 60%+ takedown defence.', ts:Date.now()-9000e3, likes:751, reposts:203, replies:44 },
+  { id:'s4', user:'Duke Fan 88', handle:'@duke88', avatar:'public/Fighter4.png', tag:'Debate', body:'Hot take: gate receipts matter more than PPV buys for judging a fighter\u2019s drawing power. Buys are bundled now. Seats are real.', ts:Date.now()-14400e3, likes:196, reposts:57, replies:81 },
+  { id:'s5', user:'Mika T', handle:'@mikat', avatar:'public/Fighter2.png', tag:'Fantasy', body:'Ran the sim on Mensah vs Whitaker 30 times. Mensah wins by KO in the first two rounds or loses a decision. There is no middle outcome.', ts:Date.now()-21600e3, likes:334, reposts:72, replies:29 }
 ];
 
 const SEED_SUBS = [
@@ -910,7 +1150,7 @@ function goToProfile(id) {
   const attrRows = Object.entries(f.attrs).map(([k, v]) => `
     <div class="mb-3">
       <div class="flex justify-between text-[10px] uppercase tracking-widest mb-1">
-        <span class="text-gray-500">${k === 'iq' ? 'Fight IQ' : k}</span><span class="text-white font-bold">${v}</span>
+        <span class="text-gray-500">${ATTR_LABELS[k] ?? k}</span><span class="text-white font-bold">${v}</span>
       </div>
       <div class="bar-track"><div class="bar-fill" style="width:${v}%"></div></div>
     </div>`).join('');
@@ -931,7 +1171,7 @@ function goToProfile(id) {
           <div><div class="text-2xl font-black italic">${f.rec}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Record</div></div>
           <div><div class="text-2xl font-black italic">${f.ko}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">KO Rate</div></div>
           <div><div class="text-2xl font-black italic text-yellow-500">${f.rating}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Rating</div></div>
-          <div><div class="text-2xl font-black italic ${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">${f.trend > 0 ? '+' : ''}${f.trend}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">7d Trend</div></div>
+          <div><div class="text-2xl font-black italic ${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">${f.trend > 0 ? '+' : ''}${f.trend}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Momentum</div></div>
         </div>
         <h3 class="section-label mb-4">Attributes</h3>
         ${attrRows}
@@ -1164,7 +1404,7 @@ function publishList() {
   store.set('communityLists', communityLists);
 
   posts.unshift({
-    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'Fighter5.png', tag: 'Lists',
+    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'public/Fighter5.png', tag: 'Lists',
     body: `Just published "${title}" — ${myList.length} fighters. Top 3: ${myList.slice(0, 3).join(', ')}. Come tell me I'm wrong.`,
     ts: Date.now(), likes: 0, reposts: 0, replies: 0, listId: list.id
   });
@@ -1435,8 +1675,11 @@ function renderFantasySelects() {
   const opts = FIGHTERS.map(f => `<option value="${f.id}">${esc(f.name)} · ${esc(f.div)}</option>`).join('');
   $('#fA').innerHTML = opts;
   $('#fB').innerHTML = opts;
-  $('#fA').value = 'alex-torres';
-  $('#fB').value = 'ivan-cross';
+  // Default to the top two of the P4P board rather than hard-coded slugs, so
+  // this keeps working when the roster is regenerated.
+  const [a, b] = [...FIGHTERS].sort((x, y) => x.rank - y.rank);
+  $('#fA').value = a.id;
+  $('#fB').value = b.id;
   renderFantasy();
   renderDreamFights();
 }
@@ -1464,7 +1707,7 @@ function fighterMiniCard(f) {
     ${Object.entries(f.attrs).map(([k, v]) => `
       <div class="mb-2">
         <div class="flex justify-between text-[10px] uppercase tracking-widest mb-1">
-          <span class="text-gray-500">${k === 'iq' ? 'Fight IQ' : k}</span><span class="font-bold">${v}</span>
+          <span class="text-gray-500">${ATTR_LABELS[k] ?? k}</span><span class="font-bold">${v}</span>
         </div>
         <div class="bar-track"><div class="bar-fill" style="width:${v}%"></div></div>
       </div>`).join('')}`;
@@ -1482,7 +1725,7 @@ function runSim() {
   const a = byId($('#fA').value), b = byId($('#fB').value);
   if (a.id === b.id) { toast('Pick two different fighters'); return; }
 
-  const score = f => Object.values(f.attrs).reduce((s, v) => s + v, 0) / 6;
+  const score = f => Object.values(f.attrs).reduce((s, v) => s + v, 0) / Object.keys(f.attrs).length;
   const key = [a.id, b.id].sort().join('|');
   const wobble = (seeded(key) - 0.5) * 14; /* stable per matchup */
   const sa = score(a) + wobble, sb = score(b) - wobble;
@@ -1550,7 +1793,7 @@ function runSim() {
 function topEdge(w, l) {
   const keys = Object.keys(w.attrs);
   const best = keys.reduce((a, k) => (w.attrs[k] - l.attrs[k] > w.attrs[a] - l.attrs[a] ? k : a), keys[0]);
-  const label = best === 'iq' ? 'fight IQ' : best;
+  const label = ATTR_LABELS[best] ?? best;
   return `${label} (${w.attrs[best]} vs ${l.attrs[best]})`;
 }
 
@@ -1602,7 +1845,7 @@ function submitPost() {
   const body = $('#composer').value.trim();
   if (!body) { toast('Write something first'); return; }
   posts.unshift({
-    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'Fighter5.png',
+    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'public/Fighter5.png',
     tag: $('#postTag').value, body, ts: Date.now(), likes: 0, reposts: 0, replies: 0, mine: true
   });
   store.set('posts', posts);
