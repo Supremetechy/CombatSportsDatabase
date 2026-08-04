@@ -1,0 +1,1871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fighters Rankings | The Combat Sports Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050505;
+            color: #fff;
+        }
+
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #262626; border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d32f2f; }
+
+        /* Hero Background */
+        .hero-gradient {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.9)), url('CombatSportDB.jpeg?auto=format&fit=crop&w=1500&q=80');
+            background-size: cover;
+            background-position: center;
+        }
+
+        /* The "Trading Card" Style from your images */
+        .fighter-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            background: linear-gradient(145deg, #1a1a1a, #0a0a0a); /* Brushed Metal look */
+            border: 2px solid #222;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .fighter-card::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border: 1px solid rgba(211, 47, 47, 0);
+            transition: border 0.3s ease;
+            z-index: 10;
+            border-radius: 12px;
+            pointer-events: none;
+        }
+
+        .fighter-card:hover {
+            transform: scale(1.05);
+            border-color: #d32f2f;
+            box-shadow: 0 0 20px rgba(211, 47, 47, 0.4);
+        }
+
+        .fighter-card:hover::before {
+            border: 1px solid rgba(211, 47, 47, 0.8);
+        }
+
+        .rank-number {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #eab308;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+            position: absolute;
+            top: 10px;
+            left: 15px;
+            z-index: 20;
+            font-style: italic;
+        }
+
+        .fighter-img {
+            width: 100%;
+            height: 380px;
+            object-fit: cover;
+            filter: grayscale(20%) contrast(110%);
+            transition: filter 0.3s ease;
+        }
+
+        .fighter-card:hover .fighter-img { filter: grayscale(0%) contrast(120%); }
+
+        .card-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 60%);
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            padding: 20px;
+            z-index: 15;
+        }
+
+        .modal { display: none; background: rgba(0,0,0,0.95); }
+        .modal.open { display: flex; }
+
+        /* ---------- Extended UX ---------- */
+        .panel {
+            background: linear-gradient(145deg, #141414, #0a0a0a);
+            border: 1px solid #1f1f1f;
+            border-radius: 12px;
+        }
+        .panel-hover { transition: border-color .25s ease, transform .25s ease; }
+        .panel-hover:hover { border-color: #d32f2f; transform: translateY(-3px); }
+
+        .section-label {
+            font-size: .75rem; font-weight: 700; color: #6b7280;
+            letter-spacing: .5em; text-transform: uppercase;
+        }
+
+        .nav-tab {
+            font-size: .7rem; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+            padding: 6px 12px; border-radius: 4px; color: #9ca3af; white-space: nowrap;
+            border: 1px solid transparent; transition: all .2s ease;
+        }
+        .nav-tab:hover { color: #fff; border-color: #333; }
+        .nav-tab.active { color: #fff; background: #d32f2f; border-color: #d32f2f; }
+
+        .chip {
+            font-size: .65rem; font-weight: 900; letter-spacing: .15em; text-transform: uppercase;
+            padding: 3px 8px; border-radius: 3px;
+        }
+
+        .view { display: none; }
+        .view.active { display: block; animation: fadeUp .35s ease; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px);} to { opacity:1; transform:none; } }
+
+        /* Trending ticker */
+        .ticker-wrap { overflow: hidden; border-top: 1px solid #1f1f1f; border-bottom: 1px solid #1f1f1f; background: #0a0a0a; }
+        .ticker { display: inline-flex; white-space: nowrap; animation: scrollX 45s linear infinite; }
+        .ticker-wrap:hover .ticker { animation-play-state: paused; }
+        @keyframes scrollX { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+        /* Bars */
+        .bar-track { background: #1a1a1a; border-radius: 3px; overflow: hidden; height: 8px; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #d32f2f, #eab308); border-radius: 3px; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+
+        .rank-row { border-bottom: 1px solid #171717; transition: background .2s ease; }
+        .rank-row:hover { background: #111; }
+
+        table.data-table { width: 100%; border-collapse: collapse; }
+        table.data-table th {
+            text-align: left; font-size: .65rem; letter-spacing: .2em; text-transform: uppercase;
+            color: #6b7280; padding: 12px; border-bottom: 1px solid #222; cursor: pointer; user-select: none;
+        }
+        table.data-table th:hover { color: #fff; }
+        table.data-table td { padding: 12px; border-bottom: 1px solid #141414; font-size: .875rem; }
+        table.data-table tr:hover td { background: #111; }
+
+        .scroll-x { overflow-x: auto; }
+
+        input, textarea, select {
+            background: #0d0d0d; border: 1px solid #262626; color: #fff; border-radius: 6px;
+            padding: 10px 12px; width: 100%; outline: none; font-size: .875rem;
+        }
+        input:focus, textarea:focus, select:focus { border-color: #d32f2f; }
+        input::placeholder, textarea::placeholder { color: #4b5563; }
+
+        .btn {
+            font-weight: 700; text-transform: uppercase; letter-spacing: .15em; font-size: .7rem;
+            padding: 10px 18px; border-radius: 6px; transition: all .2s ease; cursor: pointer;
+        }
+        .btn-primary { background: #b91c1c; color: #fff; }
+        .btn-primary:hover { background: #991b1b; }
+        .btn-ghost { border: 1px solid #333; color: #d1d5db; }
+        .btn-ghost:hover { border-color: #fff; color: #fff; }
+        .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+        .poll-bar { position: relative; background: #141414; border-radius: 6px; overflow: hidden; height: 34px; }
+        .poll-bar-fill { position: absolute; inset: 0 auto 0 0; background: rgba(185,28,28,.35); transition: width .5s ease; }
+
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(140%);
+            background: #b91c1c; color: #fff; padding: 12px 22px; border-radius: 6px; z-index: 200;
+            font-weight: 700; font-size: .8rem; letter-spacing: .1em; text-transform: uppercase;
+            transition: transform .35s cubic-bezier(.2,.8,.2,1);
+        }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        .avatar { width: 44px; height: 44px; border-radius: 999px; object-fit: cover; border: 2px solid #262626; }
+
+        .post:hover { background: #0d0d0d; }
+        .post { border-bottom: 1px solid #171717; transition: background .2s ease; }
+
+        .drag-item { cursor: grab; }
+        .drag-item.dragging { opacity: .4; }
+        .drop-hint { outline: 1px dashed #d32f2f; }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav class="bg-black border-b border-gray-900 sticky top-0 z-50">
+        <div class="flex items-center justify-between px-6 py-4">
+            <div class="flex items-center gap-2 text-xl font-black italic tracking-tighter uppercase cursor-pointer shrink-0" onclick="go('home')">
+                <img src="icon.png" alt="Combat Sports DB logo" class="h-8 w-8 object-contain" onerror="this.style.display='none'">
+                <span>CS <span class="text-red-700">DB</span></span>
+            </div>
+
+            <div class="hidden lg:flex items-center flex-1 max-w-md mx-8 relative">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 text-gray-600 text-xs"></i>
+                <input id="globalSearch" class="pl-9 text-xs" placeholder="Search fighters, fights, events..." autocomplete="off">
+                <div id="searchResults" class="hidden absolute top-full mt-2 w-full panel z-50 max-h-80 overflow-y-auto"></div>
+            </div>
+
+            <div class="flex items-center gap-3 shrink-0">
+                <span id="userChip" class="hidden text-xs font-bold text-gray-400"></span>
+                <button id="authBtn" onclick="toggleModal('authModal')" class="font-bold text-sm hover:text-red-600 transition">Sign In</button>
+                <button onclick="toggleModal('authModal')" class="bg-red-700 px-5 py-2 rounded font-bold uppercase text-xs tracking-widest">Join</button>
+            </div>
+        </div>
+
+        <div class="px-6 pb-3 flex gap-1 overflow-x-auto no-scrollbar" id="navTabs"></div>
+    </nav>
+
+    <!-- TRENDING TICKER -->
+    <div class="ticker-wrap py-2">
+        <div class="ticker" id="ticker"></div>
+    </div>
+
+    <main id="app">
+
+        <!-- ============ HOME ============ -->
+        <section class="view active" data-view="home">
+            <header class="hero-gradient min-h-[60vh] flex flex-col justify-center px-10 py-20">
+                <span class="chip bg-red-700 self-start mb-4">Demo Data · Prototype</span>
+                <h1 class="text-6xl md:text-8xl font-black uppercase italic leading-none mb-4 tracking-tighter">
+                    The Combat <br> <span class="text-red-700">Database</span>
+                </h1>
+                <p class="text-xl text-gray-400 mb-10 tracking-[0.3em] uppercase font-light">Stats. Ratings. Reputation.</p>
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="go('rankings')" class="bg-red-700 hover:bg-red-800 text-white px-10 py-4 rounded font-bold uppercase tracking-widest transition">Explore Rankings</button>
+                    <button onclick="focusSearch()" class="border border-white hover:bg-white hover:text-black px-10 py-4 rounded font-bold uppercase tracking-widest transition">Search Database</button>
+                </div>
+            </header>
+
+            <section class="px-10 py-16 bg-[#080808]">
+                <div class="flex items-end justify-between mb-10">
+                    <h2 class="section-label">Top Ranked Fighters</h2>
+                    <button onclick="go('rankings')" class="text-xs text-red-600 font-bold uppercase tracking-widest hover:text-red-400">Full Rankings →</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8" id="topCards"></div>
+            </section>
+
+            <section class="px-10 py-16 border-t border-gray-900">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div>
+                        <h2 class="section-label mb-6">Trending Now</h2>
+                        <div id="homeTrending" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h2 class="section-label mb-6">Fighters To Watch</h2>
+                        <div id="homeWatch" class="space-y-3"></div>
+                    </div>
+                    <div>
+                        <h2 class="section-label mb-6">Latest News</h2>
+                        <div id="homeNews" class="space-y-3"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="px-10 py-16 bg-[#080808] border-t border-gray-900">
+                <h2 class="section-label mb-8">Next Event</h2>
+                <div id="homeEvent"></div>
+            </section>
+        </section>
+
+        <!-- ============ RANKINGS ============ -->
+        <section class="view" data-view="rankings">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Rankings</h1>
+                <p class="text-gray-500 text-sm">Live pound-for-pound board, the all-time 50, prospects and momentum movers.</p>
+            </div>
+
+            <div class="px-10 flex gap-2 flex-wrap mb-8" id="rankSubTabs"></div>
+
+            <!-- P4P -->
+            <div class="px-10 pb-16" data-rank-pane="p4p">
+                <div class="flex flex-wrap gap-3 mb-6">
+                    <select id="divFilter" class="max-w-xs" onchange="renderP4P()"></select>
+                    <input id="p4pSearch" class="max-w-xs" placeholder="Filter by name..." oninput="renderP4P()">
+                </div>
+                <div class="panel scroll-x">
+                    <table class="data-table" id="p4pTable"></table>
+                </div>
+            </div>
+
+            <!-- TOP 50 ALL TIME -->
+            <div class="px-10 pb-16 hidden" data-rank-pane="goat">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="section-label">Official Top 50 Of All Time</h2>
+                            <span class="text-[10px] text-gray-600 uppercase tracking-widest">Editorial Board · 2026</span>
+                        </div>
+                        <div class="panel divide-y divide-[#141414]" id="goatList"></div>
+                    </div>
+
+                    <div>
+                        <div class="panel p-5 mb-6">
+                            <h3 class="font-black uppercase italic text-lg mb-1">Build Your Top 50</h3>
+                            <p class="text-xs text-gray-500 mb-4">Draft it, rank it, publish it to the forum and defend it.</p>
+                            <input id="listTitle" class="mb-3" placeholder="List title — e.g. 'My Real Top 50'">
+                            <div class="flex gap-2 mb-3">
+                                <input id="goatPoolSearch" placeholder="Add a fighter..." oninput="renderGoatPool()">
+                            </div>
+                            <div class="max-h-40 overflow-y-auto mb-4 border border-[#1f1f1f] rounded" id="goatPool"></div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] uppercase tracking-widest text-gray-500">Your list</span>
+                                <span class="text-[10px] uppercase tracking-widest text-gray-500"><span id="myListCount">0</span>/50</span>
+                            </div>
+                            <div class="max-h-64 overflow-y-auto mb-4 space-y-1" id="myList"></div>
+                            <div class="flex gap-2">
+                                <button class="btn btn-primary flex-1" onclick="publishList()">Publish</button>
+                                <button class="btn btn-ghost" onclick="clearMyList()">Clear</button>
+                            </div>
+                        </div>
+
+                        <h2 class="section-label mb-4">Community Lists</h2>
+                        <div class="space-y-3" id="communityLists"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TO WATCH -->
+            <div class="px-10 pb-16 hidden" data-rank-pane="watch">
+                <h2 class="section-label mb-6">Fighters To Watch · Next Wave</h2>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="watchGrid"></div>
+            </div>
+
+            <!-- TRENDING -->
+            <div class="px-10 pb-16 hidden" data-rank-pane="trending">
+                <h2 class="section-label mb-6">Trending Fighters · 7 Day Momentum</h2>
+                <div class="grid md:grid-cols-2 gap-4" id="trendingGrid"></div>
+            </div>
+        </section>
+
+        <!-- ============ FIGHTS ============ -->
+        <section class="view" data-view="fights">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">The Vault</h1>
+                <p class="text-gray-500 text-sm">Most popular fights, community ratings and the annual awards.</p>
+            </div>
+
+            <section class="px-10 pb-16">
+                <h2 class="section-label mb-6">Most Popular Fights</h2>
+                <div class="grid lg:grid-cols-2 gap-5" id="popularFights"></div>
+            </section>
+
+            <section class="px-10 pb-20 border-t border-gray-900 pt-12">
+                <div class="flex items-center gap-4 mb-8">
+                    <h2 class="section-label">Awards</h2>
+                    <select id="awardYear" class="max-w-[140px]" onchange="renderAwards()"></select>
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6" id="awardsGrid"></div>
+            </section>
+        </section>
+
+        <!-- ============ EVENTS ============ -->
+        <section class="view" data-view="events">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Events</h1>
+                <p class="text-gray-500 text-sm">Fight cards, countdowns and results.</p>
+            </div>
+            <div class="px-10 flex gap-2 mb-8">
+                <button class="btn btn-primary" data-evt-filter="upcoming" onclick="setEventFilter('upcoming')">Upcoming</button>
+                <button class="btn btn-ghost" data-evt-filter="past" onclick="setEventFilter('past')">Results</button>
+            </div>
+            <div class="px-10 pb-20 space-y-5" id="eventsList"></div>
+        </section>
+
+        <!-- ============ NEWS ============ -->
+        <section class="view" data-view="news">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Fighter News</h1>
+                <p class="text-gray-500 text-sm">Camps, callouts, contracts and injuries.</p>
+            </div>
+            <div class="px-10 flex gap-2 flex-wrap mb-8" id="newsFilters"></div>
+            <div class="px-10 pb-20 grid lg:grid-cols-3 gap-6" id="newsGrid"></div>
+        </section>
+
+        <!-- ============ BUSINESS ============ -->
+        <section class="view" data-view="business">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Business of Combat Sports</h1>
+                <p class="text-gray-500 text-sm">PPV buys, gate receipts, purses and the money behind the sport.</p>
+            </div>
+
+            <div class="px-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12" id="bizStats"></div>
+
+            <section class="px-10 pb-12">
+                <h2 class="section-label mb-6">Top PPV Sales · All Time</h2>
+                <div class="panel p-6" id="ppvChart"></div>
+            </section>
+
+            <section class="px-10 pb-12">
+                <h2 class="section-label mb-6">Top Gate Receipts</h2>
+                <div class="panel scroll-x">
+                    <table class="data-table" id="gateTable"></table>
+                </div>
+            </section>
+
+            <section class="px-10 pb-20">
+                <h2 class="section-label mb-6">Business Desk</h2>
+                <div class="grid lg:grid-cols-3 gap-6" id="bizNews"></div>
+            </section>
+        </section>
+
+        <!-- ============ FANTASY ============ -->
+        <section class="view" data-view="fantasy">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Fantasy Fights</h1>
+                <p class="text-gray-500 text-sm">Book the fights that never happened. Run the sim. Take the vote to the forum.</p>
+            </div>
+
+            <div class="px-10 pb-12 grid lg:grid-cols-[1fr_auto_1fr] gap-6 items-start">
+                <div class="panel p-5">
+                    <span class="chip bg-red-700 mb-3 inline-block">Corner A</span>
+                    <select id="fA" onchange="renderFantasy()"></select>
+                    <div id="fAcard" class="mt-4"></div>
+                </div>
+                <div class="flex lg:flex-col items-center justify-center gap-4 py-6">
+                    <span class="text-4xl font-black italic text-red-700">VS</span>
+                    <button class="btn btn-primary" onclick="runSim()">Run Sim</button>
+                    <button class="btn btn-ghost" onclick="randomMatchup()">Shuffle</button>
+                </div>
+                <div class="panel p-5">
+                    <span class="chip bg-yellow-600 mb-3 inline-block">Corner B</span>
+                    <select id="fB" onchange="renderFantasy()"></select>
+                    <div id="fBcard" class="mt-4"></div>
+                </div>
+            </div>
+
+            <div class="px-10 pb-12" id="simResult"></div>
+
+            <section class="px-10 pb-20">
+                <h2 class="section-label mb-6">Most Booked Dream Fights</h2>
+                <div class="space-y-3" id="dreamFights"></div>
+            </section>
+        </section>
+
+        <!-- ============ FORUM ============ -->
+        <section class="view" data-view="forum">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">The Feed</h1>
+                <p class="text-gray-500 text-sm">Post takes. Publish lists. Get told you're wrong.</p>
+            </div>
+
+            <div class="px-10 pb-20 grid lg:grid-cols-[1fr_320px] gap-8">
+                <div>
+                    <div class="panel p-4 mb-6">
+                        <div class="flex gap-3">
+                            <img src="Fighter5.png" class="avatar" alt="" onerror="this.style.visibility='hidden'">
+                            <div class="flex-1">
+                                <textarea id="composer" rows="3" maxlength="280" placeholder="What's your take?" oninput="updateCount()" style="resize:vertical"></textarea>
+                                <div class="flex items-center justify-between mt-3">
+                                    <div class="flex gap-2 items-center">
+                                        <select id="postTag" class="max-w-[150px] text-xs py-1"></select>
+                                        <span id="charCount" class="text-[10px] text-gray-600">0/280</span>
+                                    </div>
+                                    <button class="btn btn-primary" onclick="submitPost()">Post</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 mb-4 flex-wrap" id="feedFilters"></div>
+                    <div class="panel" id="feed"></div>
+                </div>
+
+                <aside class="space-y-6">
+                    <div class="panel p-5">
+                        <h3 class="section-label mb-4">Trending Topics</h3>
+                        <div id="trendTopics" class="space-y-3"></div>
+                    </div>
+                    <div class="panel p-5">
+                        <h3 class="section-label mb-4">Top Contributors</h3>
+                        <div id="topContributors" class="space-y-3"></div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- ============ COMMUNITY ============ -->
+        <section class="view" data-view="community">
+            <div class="px-10 pt-12 pb-6">
+                <h1 class="text-5xl font-black uppercase italic tracking-tighter mb-2">Community</h1>
+                <p class="text-gray-500 text-sm">Polls, the contributor zone and the people building the database.</p>
+            </div>
+
+            <section class="px-10 pb-14">
+                <h2 class="section-label mb-6">Live Polls</h2>
+                <div class="grid lg:grid-cols-2 gap-6" id="polls"></div>
+            </section>
+
+            <section class="px-10 pb-14 border-t border-gray-900 pt-12">
+                <h2 class="section-label mb-6">Contributor Zone</h2>
+                <div class="grid lg:grid-cols-[1fr_1fr] gap-8">
+                    <div class="panel p-6">
+                        <h3 class="font-black uppercase italic text-xl mb-1">Submit To The Database</h3>
+                        <p class="text-xs text-gray-500 mb-5">Corrections, missing fights, event data, scorecards. Every accepted submission earns rep.</p>
+                        <div class="space-y-3">
+                            <select id="subType"></select>
+                            <input id="subTitle" placeholder="Subject — e.g. 'Missing 2019 bout for D. Reyes'">
+                            <textarea id="subBody" rows="4" placeholder="Details and source..." style="resize:vertical"></textarea>
+                            <input id="subSource" placeholder="Source URL (optional)">
+                            <button class="btn btn-primary w-full" onclick="submitContribution()">Submit For Review</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="section-label mb-4">Submission Queue</h3>
+                        <div class="space-y-3" id="subQueue"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="px-10 pb-20 border-t border-gray-900 pt-12">
+                <h2 class="section-label mb-6">Leaderboard</h2>
+                <div class="panel scroll-x">
+                    <table class="data-table" id="repTable"></table>
+                </div>
+            </section>
+        </section>
+
+    </main>
+
+    <footer class="border-t border-gray-900 px-10 py-10 text-center">
+        <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">Combat Sports Database · Prototype · All data shown is fictional demo data</p>
+    </footer>
+
+    <!-- ============ MODALS ============ -->
+    <div id="authModal" class="modal fixed inset-0 z-[100] items-center justify-center p-6" onclick="if(event.target===this)toggleModal('authModal')">
+        <div class="panel p-8 w-full max-w-md">
+            <div class="flex justify-between items-start mb-6">
+                <div>
+                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Join <span class="text-red-700">CSDB</span></h2>
+                    <p class="text-xs text-gray-500 mt-1">Publish lists, vote, contribute.</p>
+                </div>
+                <button onclick="toggleModal('authModal')" class="text-gray-500 hover:text-white text-xl">&times;</button>
+            </div>
+            <div class="space-y-3">
+                <input id="authName" placeholder="Display name" onkeydown="if(event.key==='Enter')signIn()">
+                <button class="btn btn-primary w-full" onclick="signIn()">Continue</button>
+            </div>
+            <p class="text-[10px] text-gray-600 mt-4 text-center uppercase tracking-widest">Local demo session — nothing leaves this browser</p>
+        </div>
+    </div>
+
+    <div id="fighterModal" class="modal fixed inset-0 z-[100] items-center justify-center p-6 overflow-y-auto" onclick="if(event.target===this)toggleModal('fighterModal')">
+        <div class="panel w-full max-w-3xl overflow-hidden" id="fighterModalBody"></div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   COMBAT SPORTS DATABASE — prototype UX layer
+   Single file, no backend. State persists in localStorage under csdb.*
+   All data below is fictional demo data.
+   ===================================================================== */
+
+/* ---------------- utilities ---------------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt = n => n.toLocaleString('en-US');
+const money = n => '$' + (n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : fmt(n));
+
+const store = {
+  get(k, fallback) {
+    try { const v = localStorage.getItem('csdb.' + k); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(k, v) { try { localStorage.setItem('csdb.' + k, JSON.stringify(v)); } catch {} }
+};
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function timeAgo(ts) {
+  const s = Math.floor((Date.now() - ts) / 1000);
+  if (s < 60) return s + 's';
+  if (s < 3600) return Math.floor(s / 60) + 'm';
+  if (s < 86400) return Math.floor(s / 3600) + 'h';
+  return Math.floor(s / 86400) + 'd';
+}
+
+/* stable pseudo-random from a string — keeps sim results consistent per matchup */
+function seeded(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return ((h >>> 0) % 1000) / 1000;
+}
+
+/* ---------------- data ---------------- */
+const IMGS = ['Fighter1.png', 'Fighter2.png', 'Fighter3.png', 'Fighter4.png', 'Fighter5.png'];
+
+const FIGHTERS = [
+  { id:'alex-torres',   name:'Alex Torres',    div:'Lightweight',  rec:'28-2',  ko:75, rating:4.8, img:'Fighter2.png', country:'USA',      age:29, stance:'Orthodox', trend:+12.4, status:'ranked',   org:'Apex FC',   attrs:{striking:94,grappling:71,cardio:88,power:91,chin:84,iq:89} },
+  { id:'marcus-vale',   name:'Marcus Vale',    div:'Heavyweight',  rec:'24-1',  ko:68, rating:4.7, img:'Fighter1.png', country:'Brazil',   age:31, stance:'Southpaw', trend:+4.1,  status:'ranked',   org:'Apex FC',   attrs:{striking:88,grappling:79,cardio:74,power:97,chin:90,iq:82} },
+  { id:'dante-reyes',   name:'Dante Reyes',    div:'Welterweight', rec:'22-3',  ko:59, rating:4.6, img:'Fighter3.png', country:'Mexico',   age:27, stance:'Orthodox', trend:+21.8, status:'ranked',   org:'Vanguard',  attrs:{striking:86,grappling:84,cardio:92,power:80,chin:86,iq:90} },
+  { id:'ivan-cross',    name:'Ivan Cross',     div:'Middleweight', rec:'26-2',  ko:73, rating:4.9, img:'Fighter4.png', country:'Ukraine',  age:30, stance:'Orthodox', trend:-2.3,  status:'ranked',   org:'Apex FC',   attrs:{striking:92,grappling:88,cardio:85,power:89,chin:93,iq:94} },
+  { id:'kofi-mensah',   name:'Kofi Mensah',    div:'Light Heavy',  rec:'19-0',  ko:84, rating:4.5, img:'Fighter5.png', country:'Ghana',    age:26, stance:'Southpaw', trend:+34.6, status:'prospect', org:'Vanguard',  attrs:{striking:90,grappling:66,cardio:81,power:95,chin:79,iq:76} },
+  { id:'ren-takeda',    name:'Ren Takeda',     div:'Bantamweight', rec:'17-1',  ko:41, rating:4.4, img:'Fighter3.png', country:'Japan',    age:24, stance:'Orthodox', trend:+28.2, status:'prospect', org:'Circuit 9', attrs:{striking:81,grappling:93,cardio:95,power:64,chin:80,iq:92} },
+  { id:'sofia-lang',    name:'Sofia Lang',     div:'Flyweight',    rec:'15-0',  ko:53, rating:4.6, img:'Fighter5.png', country:'Germany',  age:25, stance:'Southpaw', trend:+31.0, status:'prospect', org:'Apex FC',   attrs:{striking:89,grappling:78,cardio:90,power:74,chin:83,iq:88} },
+  { id:'omar-haddad',   name:'Omar Haddad',    div:'Featherweight',rec:'21-4',  ko:47, rating:4.2, img:'Fighter1.png', country:'Morocco',  age:32, stance:'Orthodox', trend:-8.7,  status:'ranked',   org:'Circuit 9', attrs:{striking:83,grappling:86,cardio:87,power:71,chin:88,iq:85} },
+  { id:'lucas-brant',   name:'Lucas Brant',    div:'Welterweight', rec:'18-2',  ko:61, rating:4.3, img:'Fighter4.png', country:'Australia',age:28, stance:'Orthodox', trend:+9.5,  status:'ranked',   org:'Vanguard',  attrs:{striking:85,grappling:75,cardio:83,power:87,chin:81,iq:79} },
+  { id:'nikolai-varga', name:'Nikolai Varga',  div:'Heavyweight',  rec:'20-5',  ko:80, rating:4.1, img:'Fighter1.png', country:'Hungary',  age:34, stance:'Orthodox', trend:-14.2, status:'ranked',   org:'Apex FC',   attrs:{striking:87,grappling:62,cardio:66,power:96,chin:85,iq:70} },
+  { id:'jae-woo-park',  name:'Jae-Woo Park',   div:'Lightweight',  rec:'16-1',  ko:38, rating:4.4, img:'Fighter3.png', country:'S. Korea', age:23, stance:'Southpaw', trend:+41.3, status:'prospect', org:'Circuit 9', attrs:{striking:78,grappling:95,cardio:93,power:66,chin:82,iq:91} },
+  { id:'tariq-bello',   name:'Tariq Bello',    div:'Middleweight', rec:'14-0',  ko:71, rating:4.3, img:'Fighter2.png', country:'Nigeria',  age:25, stance:'Orthodox', trend:+26.9, status:'prospect', org:'Vanguard',  attrs:{striking:91,grappling:70,cardio:80,power:93,chin:77,iq:74} },
+  { id:'elena-vasquez', name:'Elena Vasquez',  div:'Strawweight',  rec:'19-3',  ko:32, rating:4.5, img:'Fighter5.png', country:'Spain',    age:29, stance:'Orthodox', trend:+6.2,  status:'ranked',   org:'Apex FC',   attrs:{striking:84,grappling:89,cardio:94,power:60,chin:84,iq:93} },
+  { id:'sam-okoye',     name:'Sam Okoye',      div:'Light Heavy',  rec:'23-4',  ko:65, rating:4.2, img:'Fighter4.png', country:'UK',       age:33, stance:'Southpaw', trend:-5.4,  status:'ranked',   org:'Circuit 9', attrs:{striking:86,grappling:80,cardio:76,power:88,chin:91,iq:83} },
+  { id:'mateo-silva',   name:'Mateo Silva',    div:'Featherweight',rec:'13-0',  ko:46, rating:4.1, img:'Fighter2.png', country:'Argentina',age:22, stance:'Orthodox', trend:+38.8, status:'prospect', org:'Vanguard',  attrs:{striking:80,grappling:87,cardio:91,power:68,chin:78,iq:86} },
+  { id:'yuri-petrov',   name:'Yuri Petrov',    div:'Bantamweight', rec:'20-2',  ko:44, rating:4.4, img:'Fighter1.png', country:'Russia',   age:28, stance:'Orthodox', trend:+11.1, status:'ranked',   org:'Apex FC',   attrs:{striking:83,grappling:90,cardio:89,power:69,chin:85,iq:88} }
+];
+
+const byId = id => FIGHTERS.find(f => f.id === id);
+const DIVISIONS = [...new Set(FIGHTERS.map(f => f.div))].sort();
+
+/* Official all-time 50 — fictional legends */
+const GOAT = [
+  ['Rafael "El Rey" Montoya','1994–2011','Middleweight','52-3-1'],
+  ['Duke Halloran','1988–2004','Heavyweight','48-5'],
+  ['Kenji Ishikawa','1997–2014','Lightweight','44-2'],
+  ['Ivan Cross','2016–','Middleweight','26-2'],
+  ['Amara Diallo','2001–2018','Welterweight','41-4'],
+  ['Sergei Volkov','1991–2007','Heavyweight','39-6'],
+  ['Paulo Marchetti','1999–2016','Featherweight','45-3'],
+  ['Grace Okonkwo','2005–2021','Flyweight','33-1'],
+  ['Hector Salas','1986–2002','Bantamweight','50-7'],
+  ['Bo "Ironclad" Whitaker','1993–2009','Light Heavy','37-4'],
+  ['Alex Torres','2018–','Lightweight','28-2'],
+  ['Mikhail Orlov','1990–2006','Welterweight','43-5'],
+  ['Tomas Aguilar','2003–2019','Middleweight','36-6'],
+  ['Nadia Ferreira','2007–2023','Strawweight','31-2'],
+  ['Jonah Steele','1995–2010','Heavyweight','35-8'],
+  ['Lin Zhao','2000–2017','Bantamweight','40-4'],
+  ['Marcus Vale','2017–','Heavyweight','24-1'],
+  ['Ade Kalu','2002–2018','Light Heavy','34-5'],
+  ['Danilo Rossi','1989–2003','Featherweight','42-6'],
+  ['Yusuf Karim','2006–2022','Lightweight','32-4'],
+  ['Vera Lindqvist','2009–','Flyweight','27-2'],
+  ['Big Ray Colton','1984–1999','Heavyweight','44-9'],
+  ['Ravi Chandra','1998–2013','Bantamweight','38-5'],
+  ['Dante Reyes','2019–','Welterweight','22-3'],
+  ['Franco Beltran','1992–2008','Middleweight','36-7'],
+  ['Kim Do-Yun','2004–2020','Featherweight','35-4'],
+  ['Otto Brenner','1987–2001','Light Heavy','33-8'],
+  ['Priya Nair','2010–','Strawweight','25-3'],
+  ['Cassius Dean','1996–2012','Welterweight','37-6'],
+  ['Tomo Nakagawa','2001–2015','Lightweight','34-6'],
+  ['Bruno Cardoso','1994–2009','Heavyweight','31-9'],
+  ['Halima Osei','2008–2024','Flyweight','29-3'],
+  ['Viktor Rusu','1999–2014','Middleweight','33-7'],
+  ['Kofi Mensah','2021–','Light Heavy','19-0'],
+  ['Neil Barrow','1985–1998','Bantamweight','39-10'],
+  ['Sasha Ivanova','2011–','Bantamweight','24-2'],
+  ['Emeka Nwosu','1997–2011','Welterweight','32-8'],
+  ['Rudy Castellan','1990–2005','Featherweight','36-9'],
+  ['Jonas Berg','2005–2021','Heavyweight','28-6'],
+  ['Layla Haddad','2012–','Strawweight','22-2'],
+  ['Chen Wei','1993–2007','Lightweight','35-8'],
+  ['Milo Petrakis','2000–2016','Middleweight','30-8'],
+  ['Sam Okoye','2014–','Light Heavy','23-4'],
+  ['Rosa Delgado','2006–2020','Flyweight','26-5'],
+  ['Anton Kovac','1988–2000','Heavyweight','30-10'],
+  ['Ren Takeda','2022–','Bantamweight','17-1'],
+  ['Bilal Ferran','2003–2017','Welterweight','29-9'],
+  ['Grigor Sahakyan','1996–2010','Featherweight','31-10'],
+  ['Elena Vasquez','2017–','Strawweight','19-3'],
+  ['Omar Haddad','2015–','Featherweight','21-4']
+];
+
+const NEWS = [
+  { cat:'Callout',  title:'Torres calls for Cross at 165 catchweight', body:'"He wants the belt, I want the man. Meet me in the middle." Torres went public after the Apex FC 118 weigh-ins.', src:'CSDB Desk', ts:Date.now()-3600e3*2 },
+  { cat:'Injury',   title:'Vale withdraws from December main event', body:'A left orbital fracture sustained in camp rules the heavyweight out for eight weeks. Replacement expected within days.', src:'Apex FC', ts:Date.now()-3600e3*7 },
+  { cat:'Contract', title:'Mensah signs four-fight extension with Vanguard', body:'The undefeated light heavyweight locks in through 2028 with an upgraded PPV points clause.', src:'Vanguard Media', ts:Date.now()-3600e3*20 },
+  { cat:'Camp',     title:'Reyes relocates full camp to altitude', body:'Six weeks at 2,400m ahead of a five-round title bout. His coach says cardio was "never the issue — recovery was."', src:'CSDB Desk', ts:Date.now()-3600e3*30 },
+  { cat:'Callout',  title:'Takeda: "Give me a ranked opponent or release me"', body:'The 24-year-old grappler is 17-1 and says he has been offered three unranked bouts in a row.', src:'Circuit 9', ts:Date.now()-3600e3*44 },
+  { cat:'Business', title:'Apex FC posts record Q2 on international rights', body:'Media rights revenue up 34% year over year, driven by a new APAC package.', src:'Business Desk', ts:Date.now()-3600e3*52 },
+  { cat:'Camp',     title:'Lang adds two-time Olympic wrestler to team', body:'The flyweight addresses the one clear hole in a 15-0 record ahead of a title eliminator.', src:'CSDB Desk', ts:Date.now()-3600e3*66 },
+  { cat:'Injury',   title:'Okoye cleared after concussion protocol', body:'Medical suspension lifted; the light heavyweight targets a February return.', src:'Circuit 9', ts:Date.now()-3600e3*80 },
+  { cat:'Business', title:'Vanguard sells minority stake at $1.4B valuation', body:'A sovereign fund takes 12% as the promotion expands into three new markets.', src:'Business Desk', ts:Date.now()-3600e3*96 }
+];
+
+const EVENTS = [
+  { name:'Apex FC 121: Torres vs Brant', date:'2026-08-29', venue:'Coliseum Arena, Las Vegas', main:'Alex Torres vs Lucas Brant', card:['Torres vs Brant — Lightweight Title','Vasquez vs Nair — Strawweight','Mensah vs Okoye — Light Heavy','Takeda vs Petrov — Bantamweight'], status:'upcoming' },
+  { name:'Vanguard 44: Night of Champions', date:'2026-09-19', venue:'Estádio Central, São Paulo', main:'Dante Reyes vs Kofi Mensah', card:['Reyes vs Mensah — Catchweight','Silva vs Haddad — Featherweight','Bello vs Rusu — Middleweight'], status:'upcoming' },
+  { name:'Circuit 9: Rising', date:'2026-10-10', venue:'Kokugikan Hall, Tokyo', main:'Ren Takeda vs Jae-Woo Park', card:['Takeda vs Park — Bantamweight','Lang vs Delgado — Flyweight','Silva vs Karim — Featherweight'], status:'upcoming' },
+  { name:'Apex FC 124: Year End', date:'2026-12-12', venue:'O2 Arena, London', main:'Ivan Cross vs Tariq Bello', card:['Cross vs Bello — Middleweight Title','Vale vs Varga — Heavyweight','Torres vs Park — Lightweight'], status:'upcoming' },
+  { name:'Apex FC 118: Cross vs Rusu', date:'2026-06-13', venue:'Madison Square Garden, NY', main:'Ivan Cross def. Viktor Rusu (KO R3)', card:['Cross def. Rusu — KO R3','Vale def. Berg — TKO R1','Lang def. Osei — UD'], status:'past', gate:14_200_000, ppv:1_150_000 },
+  { name:'Vanguard 41: Homecoming', date:'2026-05-02', venue:'Arena México, CDMX', main:'Dante Reyes def. Bilal Ferran (SUB R2)', card:['Reyes def. Ferran — SUB R2','Bello def. Petrakis — UD','Mensah def. Kalu — KO R1'], status:'past', gate:8_600_000, ppv:640_000 },
+  { name:'Circuit 9: Origins', date:'2026-03-21', venue:'Saitama Super Arena', main:'Ren Takeda def. Lin Zhao (UD)', card:['Takeda def. Zhao — UD','Park def. Nakagawa — SUB R3','Silva def. Chandra — TKO R2'], status:'past', gate:5_100_000, ppv:410_000 }
+];
+
+const POPULAR_FIGHTS = [
+  { a:'Ivan Cross', b:'Viktor Rusu', event:'Apex FC 118', year:2026, rating:4.9, votes:18420, result:'KO R3', tag:'Instant Classic' },
+  { a:'Rafael Montoya', b:'Duke Halloran', event:'Legacy 7', year:2003, rating:4.9, votes:41200, result:'UD', tag:'All-Time Great' },
+  { a:'Alex Torres', b:'Yusuf Karim', event:'Apex FC 109', year:2025, rating:4.8, votes:22150, result:'TKO R5', tag:'Comeback' },
+  { a:'Dante Reyes', b:'Cassius Dean', event:'Vanguard 38', year:2025, rating:4.7, votes:16880, result:'SUB R4', tag:'Submission Of The Year' },
+  { a:'Kenji Ishikawa', b:'Chen Wei', event:'Legacy 12', year:2006, rating:4.8, votes:33400, result:'SD', tag:'Trilogy Closer' },
+  { a:'Grace Okonkwo', b:'Nadia Ferreira', event:'Apex FC 88', year:2019, rating:4.8, votes:27600, result:'UD', tag:'Historic' },
+  { a:'Kofi Mensah', b:'Ade Kalu', event:'Vanguard 41', year:2026, rating:4.6, votes:12040, result:'KO R1', tag:'Highlight Reel' },
+  { a:'Marcus Vale', b:'Jonas Berg', event:'Apex FC 118', year:2026, rating:4.5, votes:11300, result:'TKO R1', tag:'Statement' }
+];
+
+const AWARDS = {
+  2026: [
+    { cat:'Fighter of the Year', win:'Ivan Cross', note:'Three title defences, zero rounds lost.', img:'Fighter4.png' },
+    { cat:'Fight of the Year', win:'Cross vs Rusu', note:'Apex FC 118 · KO R3 after a 14-minute war.', img:'Fighter3.png' },
+    { cat:'Knockout of the Year', win:'Kofi Mensah', note:'Spinning back elbow, 41 seconds.', img:'Fighter5.png' },
+    { cat:'Submission of the Year', win:'Jae-Woo Park', note:'Standing arm-triangle from the clinch.', img:'Fighter3.png' },
+    { cat:'Breakthrough of the Year', win:'Sofia Lang', note:'15-0 and a title shot inside 18 months.', img:'Fighter5.png' },
+    { cat:'Comeback of the Year', win:'Omar Haddad', note:'Down 3 rounds, finished in the 5th.', img:'Fighter1.png' }
+  ],
+  2025: [
+    { cat:'Fighter of the Year', win:'Alex Torres', note:'Unified at lightweight in nine months.', img:'Fighter2.png' },
+    { cat:'Fight of the Year', win:'Torres vs Karim', note:'Apex FC 109 · TKO R5.', img:'Fighter2.png' },
+    { cat:'Knockout of the Year', win:'Marcus Vale', note:'One-punch counter, 22 seconds.', img:'Fighter1.png' },
+    { cat:'Submission of the Year', win:'Dante Reyes', note:'Flying triangle off a failed takedown.', img:'Fighter3.png' },
+    { cat:'Breakthrough of the Year', win:'Ren Takeda', note:'Six wins, six finishes.', img:'Fighter3.png' },
+    { cat:'Comeback of the Year', win:'Sam Okoye', note:'Return from an 18-month layoff to a title eliminator.', img:'Fighter4.png' }
+  ],
+  2024: [
+    { cat:'Fighter of the Year', win:'Elena Vasquez', note:'Four wins, three finishes.', img:'Fighter5.png' },
+    { cat:'Fight of the Year', win:'Vasquez vs Nair', note:'Apex FC 96 · split decision.', img:'Fighter5.png' },
+    { cat:'Knockout of the Year', win:'Nikolai Varga', note:'Overhand right, 11 seconds.', img:'Fighter1.png' },
+    { cat:'Submission of the Year', win:'Yuri Petrov', note:'Twister from back mount.', img:'Fighter1.png' },
+    { cat:'Breakthrough of the Year', win:'Tariq Bello', note:'From regional to top-10 in a year.', img:'Fighter2.png' },
+    { cat:'Comeback of the Year', win:'Lucas Brant', note:'Three straight after two losses.', img:'Fighter4.png' }
+  ]
+};
+
+const PPV = [
+  { fight:'Montoya vs Halloran II', year:2003, buys:2_400_000, promo:'Legacy' },
+  { fight:'Cross vs Rusu', year:2026, buys:1_150_000, promo:'Apex FC' },
+  { fight:'Torres vs Karim', year:2025, buys:1_080_000, promo:'Apex FC' },
+  { fight:'Ishikawa vs Chen III', year:2006, buys:980_000, promo:'Legacy' },
+  { fight:'Vale vs Volkov', year:2024, buys:870_000, promo:'Apex FC' },
+  { fight:'Okonkwo vs Ferreira', year:2019, buys:790_000, promo:'Apex FC' },
+  { fight:'Reyes vs Ferran', year:2026, buys:640_000, promo:'Vanguard' },
+  { fight:'Mensah vs Kalu', year:2026, buys:520_000, promo:'Vanguard' }
+];
+
+const GATES = [
+  { event:'Apex FC 118', venue:'Madison Square Garden, NY', year:2026, gate:14_200_000, attendance:19_400, avg:732 },
+  { event:'Legacy 7', venue:'Caesars, Las Vegas', year:2003, gate:12_900_000, attendance:16_800, avg:768 },
+  { event:'Apex FC 109', venue:'T-Mobile Arena, Las Vegas', year:2025, gate:11_400_000, attendance:18_100, avg:630 },
+  { event:'Vanguard 41', venue:'Arena México, CDMX', year:2026, gate:8_600_000, attendance:21_300, avg:404 },
+  { event:'Apex FC 96', venue:'O2 Arena, London', year:2024, gate:7_800_000, attendance:17_500, avg:446 },
+  { event:'Circuit 9: Origins', venue:'Saitama Super Arena', year:2026, gate:5_100_000, attendance:24_800, avg:206 },
+  { event:'Vanguard 38', venue:'Estádio Central, São Paulo', year:2025, gate:4_700_000, attendance:26_200, avg:179 }
+];
+
+const BIZ_STATS = [
+  { label:'2026 PPV Revenue', value:'$412M', delta:+18.4 },
+  { label:'Global Gate Receipts', value:'$186M', delta:+9.2 },
+  { label:'Avg. Main Event Purse', value:'$2.1M', delta:+24.7 },
+  { label:'Media Rights (Annual)', value:'$1.6B', delta:+34.1 }
+];
+
+const BIZ_NEWS = [
+  { title:'Sponsorship inventory sells out through Q1', body:'Apex FC reports 100% of cage-side inventory committed, with two new category-exclusive deals in fintech and hydration.', tag:'Sponsorship' },
+  { title:'Fighter pay share climbs to 22% of revenue', body:'Up from 16% in 2022 after collective pressure and a revised PPV points structure for main-event slots.', tag:'Labour' },
+  { title:'Streaming bundle drives 41% subscriber lift', body:'Bundling numbered events with the archive library cut churn nearly in half across the first two quarters.', tag:'Media' }
+];
+
+const DREAM_FIGHTS = [
+  { a:'Ivan Cross', b:'Rafael Montoya', books:8420 },
+  { a:'Alex Torres', b:'Kenji Ishikawa', books:7180 },
+  { a:'Marcus Vale', b:'Duke Halloran', books:6640 },
+  { a:'Dante Reyes', b:'Amara Diallo', books:5210 },
+  { a:'Kofi Mensah', b:'Bo Whitaker', books:4890 },
+  { a:'Sofia Lang', b:'Grace Okonkwo', books:4330 }
+];
+
+const SEED_POLLS = [
+  { id:'p1', q:'Who wins at Apex FC 121?', opts:['Alex Torres','Lucas Brant'], votes:[4210, 1890] },
+  { id:'p2', q:'Greatest of all time?', opts:['Rafael Montoya','Duke Halloran','Kenji Ishikawa','Ivan Cross'], votes:[3120, 2210, 1980, 2640] },
+  { id:'p3', q:'Should open scoring be adopted at all levels?', opts:['Yes, immediately','Yes, but title fights only','No'], votes:[5410, 1720, 940] },
+  { id:'p4', q:'Best division in the sport right now?', opts:['Lightweight','Middleweight','Bantamweight','Flyweight'], votes:[3890, 2740, 1620, 1180] }
+];
+
+const SEED_POSTS = [
+  { id:'s1', user:'CageSideCarl', handle:'@cagesidecarl', avatar:'Fighter1.png', tag:'Debate', body:'Putting Cross above Montoya is recency bias and everyone knows it. Montoya beat five hall of famers. Cross has beaten one.', ts:Date.now()-1800e3, likes:412, reposts:88, replies:63 },
+  { id:'s2', user:'Ana Ruiz', handle:'@anaruiz', avatar:'Fighter5.png', tag:'Lists', body:'My top 50 is up. Yes, Takeda is in it at 46. He is 17-1 with the best grappling in the sport and I will not be taking questions.', ts:Date.now()-5400e3, likes:288, reposts:41, replies:97 },
+  { id:'s3', user:'Fight Metrics', handle:'@fightmetrics', avatar:'Fighter3.png', tag:'Analysis', body:'Reyes landed 6.4 significant strikes per minute over his last three. Only two fighters in the era have sustained that with 60%+ takedown defence.', ts:Date.now()-9000e3, likes:751, reposts:203, replies:44 },
+  { id:'s4', user:'Duke Fan 88', handle:'@duke88', avatar:'Fighter4.png', tag:'Debate', body:'Hot take: gate receipts matter more than PPV buys for judging a fighter\u2019s drawing power. Buys are bundled now. Seats are real.', ts:Date.now()-14400e3, likes:196, reposts:57, replies:81 },
+  { id:'s5', user:'Mika T', handle:'@mikat', avatar:'Fighter2.png', tag:'Fantasy', body:'Ran the sim on Mensah vs Whitaker 30 times. Mensah wins by KO in the first two rounds or loses a decision. There is no middle outcome.', ts:Date.now()-21600e3, likes:334, reposts:72, replies:29 }
+];
+
+const SEED_SUBS = [
+  { id:'c1', type:'Fight Record', title:'Missing 2019 regional bout — D. Reyes', status:'Accepted', user:'Ana Ruiz', ts:Date.now()-86400e3*2 },
+  { id:'c2', type:'Correction', title:'Vale KO% listed as 68, should be 71', status:'In Review', user:'CageSideCarl', ts:Date.now()-86400e3 },
+  { id:'c3', type:'Event Data', title:'Circuit 9: Origins attendance figure', status:'Accepted', user:'Fight Metrics', ts:Date.now()-86400e3*4 },
+  { id:'c4', type:'Scorecard', title:'Full judge scorecards — Apex FC 118 main', status:'In Review', user:'Mika T', ts:Date.now()-3600e3*10 }
+];
+
+const CONTRIBUTORS = [
+  { user:'Fight Metrics', rep:14820, accepted:412, badge:'Archivist' },
+  { user:'Ana Ruiz', rep:11340, accepted:388, badge:'Historian' },
+  { user:'CageSideCarl', rep:9110, accepted:271, badge:'Scout' },
+  { user:'Mika T', rep:7640, accepted:203, badge:'Scout' },
+  { user:'Duke Fan 88', rep:5220, accepted:144, badge:'Contributor' },
+  { user:'Kenta S', rep:4180, accepted:118, badge:'Contributor' }
+];
+
+const SEED_COMMUNITY_LISTS = [
+  { id:'l1', title:'The Only Top 50 That Counts', user:'Fight Metrics', likes:1240, items:GOAT.slice(0, 10).map(g => g[0]), ts:Date.now()-86400e3*3 },
+  { id:'l2', title:'Modern Era Only (2010+)', user:'Ana Ruiz', likes:880, items:['Ivan Cross','Alex Torres','Dante Reyes','Marcus Vale','Kofi Mensah','Sofia Lang','Elena Vasquez'], ts:Date.now()-86400e3*6 },
+  { id:'l3', title:'Heavyweights, Ranked Properly', user:'Duke Fan 88', likes:611, items:['Duke Halloran','Sergei Volkov','Big Ray Colton','Marcus Vale','Jonah Steele','Bruno Cardoso'], ts:Date.now()-86400e3*9 }
+];
+
+const NAV = [
+  { id:'home',      label:'Home' },
+  { id:'rankings',  label:'Rankings' },
+  { id:'fights',    label:'Fights & Awards' },
+  { id:'events',    label:'Events' },
+  { id:'news',      label:'News' },
+  { id:'business',  label:'Business' },
+  { id:'fantasy',   label:'Fantasy' },
+  { id:'forum',     label:'Forum' },
+  { id:'community', label:'Community' }
+];
+
+/* ---------------- session state ---------------- */
+let user = store.get('user', null);
+let posts = store.get('posts', null) || SEED_POSTS;
+let myLists = store.get('mylists', []);
+let communityLists = store.get('communityLists', null) || SEED_COMMUNITY_LISTS;
+let pollVotes = store.get('pollVotes', {});
+let pollTallies = store.get('pollTallies', null) || Object.fromEntries(SEED_POLLS.map(p => [p.id, p.votes.slice()]));
+let likedPosts = store.get('likedPosts', {});
+let likedLists = store.get('likedLists', {});
+let submissions = store.get('subs', null) || SEED_SUBS;
+let myList = store.get('draftList', []);
+let fantasyVotes = store.get('fantasyVotes', {});
+let eventFilter = 'upcoming';
+let newsFilter = 'All';
+let feedFilter = 'All';
+let rankPane = 'p4p';
+let p4pSort = { key: 'rating', dir: -1 };
+let gateSort = { key: 'gate', dir: -1 };
+let lastSim = null;
+
+/* ---------------- router ---------------- */
+function go(view) {
+  $$('.view').forEach(v => v.classList.toggle('active', v.dataset.view === view));
+  $$('#navTabs .nav-tab').forEach(t => t.classList.toggle('active', t.dataset.nav === view));
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  history.replaceState(null, '', '#' + view);
+}
+
+function renderNav() {
+  $('#navTabs').innerHTML = NAV.map(n =>
+    `<button class="nav-tab ${n.id === 'home' ? 'active' : ''}" data-nav="${n.id}" onclick="go('${n.id}')">${n.label}</button>`
+  ).join('');
+}
+
+/* ---------------- modals ---------------- */
+function toggleModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.toggle('open');
+  document.body.style.overflow = m.classList.contains('open') ? 'hidden' : '';
+}
+
+function signIn() {
+  const name = $('#authName').value.trim();
+  if (!name) { toast('Enter a display name'); return; }
+  user = { name, handle: '@' + name.toLowerCase().replace(/[^a-z0-9]/g, '') };
+  store.set('user', user);
+  renderUser();
+  toggleModal('authModal');
+  toast('Signed in as ' + name);
+}
+
+function renderUser() {
+  if (user) {
+    $('#userChip').textContent = user.handle;
+    $('#userChip').classList.remove('hidden');
+    $('#authBtn').textContent = 'Sign Out';
+    $('#authBtn').onclick = () => { user = null; store.set('user', null); renderUser(); toast('Signed out'); };
+  } else {
+    $('#userChip').classList.add('hidden');
+    $('#authBtn').textContent = 'Sign In';
+    $('#authBtn').onclick = () => toggleModal('authModal');
+  }
+}
+
+function requireUser(action) {
+  if (user) return true;
+  toast('Sign in to ' + action);
+  toggleModal('authModal');
+  return false;
+}
+
+/* ---------------- fighter modal ---------------- */
+function goToProfile(id) {
+  const f = byId(id);
+  if (!f) return;
+  const attrRows = Object.entries(f.attrs).map(([k, v]) => `
+    <div class="mb-3">
+      <div class="flex justify-between text-[10px] uppercase tracking-widest mb-1">
+        <span class="text-gray-500">${k === 'iq' ? 'Fight IQ' : k}</span><span class="text-white font-bold">${v}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${v}%"></div></div>
+    </div>`).join('');
+
+  $('#fighterModalBody').innerHTML = `
+    <div class="grid md:grid-cols-[280px_1fr]">
+      <img src="${f.img}" alt="${esc(f.name)}" class="w-full h-full object-cover max-h-[460px]">
+      <div class="p-8">
+        <div class="flex justify-between items-start">
+          <div>
+            <span class="chip bg-red-700">${esc(f.div)}</span>
+            <h2 class="text-4xl font-black uppercase italic tracking-tighter mt-2">${esc(f.name)}</h2>
+            <p class="text-gray-500 text-xs uppercase tracking-widest mt-1">${esc(f.country)} · Age ${f.age} · ${esc(f.stance)} · ${esc(f.org)}</p>
+          </div>
+          <button onclick="toggleModal('fighterModal')" class="text-gray-500 hover:text-white text-2xl leading-none">&times;</button>
+        </div>
+        <div class="grid grid-cols-4 gap-4 my-6 text-center">
+          <div><div class="text-2xl font-black italic">${f.rec}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Record</div></div>
+          <div><div class="text-2xl font-black italic">${f.ko}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">KO Rate</div></div>
+          <div><div class="text-2xl font-black italic text-yellow-500">${f.rating}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Rating</div></div>
+          <div><div class="text-2xl font-black italic ${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">${f.trend > 0 ? '+' : ''}${f.trend}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">7d Trend</div></div>
+        </div>
+        <h3 class="section-label mb-4">Attributes</h3>
+        ${attrRows}
+        <div class="flex gap-2 mt-6">
+          <button class="btn btn-primary" onclick="toggleModal('fighterModal');bookFantasy('${f.id}')">Book A Fantasy Fight</button>
+          <button class="btn btn-ghost" onclick="toggleModal('fighterModal');addFighterToList('${f.id}');go('rankings');setRankPane('goat')">Add To My Top 50</button>
+        </div>
+      </div>
+    </div>`;
+  toggleModal('fighterModal');
+}
+
+/* ---------------- home ---------------- */
+function fighterCard(f, rank) {
+  return `
+    <div class="fighter-card" onclick="goToProfile('${f.id}')">
+      ${rank ? `<div class="rank-number">#${rank}</div>` : ''}
+      <img src="${f.img}" alt="${esc(f.name)}" class="fighter-img">
+      <div class="card-overlay">
+        <div class="bg-red-700 text-[10px] inline-block px-2 py-0.5 rounded font-black mb-1 uppercase tracking-widest">${esc(f.div)}</div>
+        <h3 class="text-2xl font-black uppercase italic">${esc(f.name)}</h3>
+        <div class="flex justify-between items-center mt-1">
+          <span class="text-yellow-500 font-bold text-sm">${f.rating} ★</span>
+          <span class="text-gray-500 text-xs font-bold uppercase tracking-tighter">${f.rec} (KO ${f.ko}%)</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderHome() {
+  const ranked = FIGHTERS.filter(f => f.status === 'ranked').sort((a, b) => b.rating - a.rating);
+  $('#topCards').innerHTML = ranked.slice(0, 4).map((f, i) => fighterCard(f, i + 1)).join('');
+
+  $('#homeTrending').innerHTML = [...FIGHTERS].sort((a, b) => b.trend - a.trend).slice(0, 5).map(f => `
+    <div class="panel panel-hover p-3 flex items-center gap-3 cursor-pointer" onclick="goToProfile('${f.id}')">
+      <img src="${f.img}" class="avatar" alt="">
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm truncate">${esc(f.name)}</div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600">${esc(f.div)}</div>
+      </div>
+      <span class="text-sm font-black ${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">
+        <i class="fa-solid fa-arrow-${f.trend >= 0 ? 'up' : 'down'} text-[10px]"></i> ${Math.abs(f.trend)}%
+      </span>
+    </div>`).join('');
+
+  $('#homeWatch').innerHTML = FIGHTERS.filter(f => f.status === 'prospect').slice(0, 5).map(f => `
+    <div class="panel panel-hover p-3 flex items-center gap-3 cursor-pointer" onclick="goToProfile('${f.id}')">
+      <img src="${f.img}" class="avatar" alt="">
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm truncate">${esc(f.name)}</div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600">${f.rec} · Age ${f.age}</div>
+      </div>
+      <span class="chip bg-yellow-600 text-black">Watch</span>
+    </div>`).join('');
+
+  $('#homeNews').innerHTML = NEWS.slice(0, 4).map(n => `
+    <div class="panel panel-hover p-3 cursor-pointer" onclick="go('news')">
+      <span class="chip bg-[#1f1f1f] text-gray-400">${esc(n.cat)}</span>
+      <div class="font-bold text-sm mt-2 leading-snug">${esc(n.title)}</div>
+      <div class="text-[10px] uppercase tracking-widest text-gray-600 mt-1">${timeAgo(n.ts)} ago · ${esc(n.src)}</div>
+    </div>`).join('');
+
+  const next = EVENTS.filter(e => e.status === 'upcoming')[0];
+  $('#homeEvent').innerHTML = eventCard(next, true);
+  startCountdowns();
+}
+
+function renderTicker() {
+  const items = [...FIGHTERS].sort((a, b) => b.trend - a.trend).map(f =>
+    `<span class="px-6 text-xs font-bold uppercase tracking-widest">
+       ${esc(f.name)}
+       <span class="${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">${f.trend > 0 ? '▲' : '▼'} ${Math.abs(f.trend)}%</span>
+     </span>`).join('');
+  $('#ticker').innerHTML = items + items; /* duplicated for seamless loop */
+}
+
+/* ---------------- rankings ---------------- */
+const RANK_PANES = [
+  { id:'p4p',      label:'Pound For Pound' },
+  { id:'goat',     label:'Top 50 All Time' },
+  { id:'watch',    label:'Fighters To Watch' },
+  { id:'trending', label:'Trending' }
+];
+
+function setRankPane(id) {
+  rankPane = id;
+  $$('[data-rank-pane]').forEach(p => p.classList.toggle('hidden', p.dataset.rankPane !== id));
+  $$('#rankSubTabs .btn').forEach(b => {
+    const on = b.dataset.pane === id;
+    b.className = 'btn ' + (on ? 'btn-primary' : 'btn-ghost');
+  });
+}
+
+function renderRankings() {
+  $('#rankSubTabs').innerHTML = RANK_PANES.map(p =>
+    `<button class="btn ${p.id === rankPane ? 'btn-primary' : 'btn-ghost'}" data-pane="${p.id}" onclick="setRankPane('${p.id}')">${p.label}</button>`
+  ).join('');
+
+  $('#divFilter').innerHTML = '<option value="">All Divisions</option>' +
+    DIVISIONS.map(d => `<option>${d}</option>`).join('');
+
+  renderP4P();
+  renderGoat();
+  renderGoatPool();
+  renderMyList();
+  renderCommunityLists();
+  renderWatch();
+  renderTrending();
+}
+
+function sortP4P(key) {
+  p4pSort.dir = p4pSort.key === key ? -p4pSort.dir : -1;
+  p4pSort.key = key;
+  renderP4P();
+}
+
+function renderP4P() {
+  const div = $('#divFilter').value;
+  const q = $('#p4pSearch').value.trim().toLowerCase();
+  const cols = [
+    { key:'name', label:'Fighter' }, { key:'div', label:'Division' }, { key:'rec', label:'Record' },
+    { key:'ko', label:'KO %' }, { key:'rating', label:'Rating' }, { key:'trend', label:'7d' }, { key:'org', label:'Promotion' }
+  ];
+
+  const rows = FIGHTERS
+    .filter(f => (!div || f.div === div) && (!q || f.name.toLowerCase().includes(q)))
+    .sort((a, b) => {
+      const k = p4pSort.key, x = a[k], y = b[k];
+      return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * p4pSort.dir;
+    });
+
+  $('#p4pTable').innerHTML = `
+    <thead><tr><th>#</th>${cols.map(c =>
+      `<th onclick="sortP4P('${c.key}')">${c.label}${p4pSort.key === c.key ? (p4pSort.dir === -1 ? ' ▼' : ' ▲') : ''}</th>`
+    ).join('')}</tr></thead>
+    <tbody>${rows.map((f, i) => `
+      <tr class="cursor-pointer" onclick="goToProfile('${f.id}')">
+        <td class="text-yellow-500 font-black italic">${i + 1}</td>
+        <td class="flex items-center gap-3">
+          <img src="${f.img}" class="w-8 h-8 rounded-full object-cover border border-[#262626]" alt="">
+          <span class="font-bold">${esc(f.name)}</span>
+          ${f.status === 'prospect' ? '<span class="chip bg-yellow-600 text-black">Watch</span>' : ''}
+        </td>
+        <td class="text-gray-400">${esc(f.div)}</td>
+        <td class="text-gray-400">${f.rec}</td>
+        <td class="text-gray-400">${f.ko}%</td>
+        <td class="text-yellow-500 font-bold">${f.rating}</td>
+        <td class="${f.trend >= 0 ? 'text-green-500' : 'text-red-500'} font-bold">${f.trend > 0 ? '+' : ''}${f.trend}%</td>
+        <td class="text-gray-500 text-xs uppercase tracking-widest">${esc(f.org)}</td>
+      </tr>`).join('') || '<tr><td colspan="8" class="text-center text-gray-600 py-10">No fighters match that filter.</td></tr>'}
+    </tbody>`;
+}
+
+function renderGoat() {
+  $('#goatList').innerHTML = GOAT.map((g, i) => `
+    <div class="rank-row flex items-center gap-4 p-4">
+      <span class="text-2xl font-black italic w-12 ${i < 3 ? 'text-yellow-500' : 'text-gray-700'}">${i + 1}</span>
+      <div class="flex-1 min-w-0">
+        <div class="font-black uppercase italic truncate">${esc(g[0])}</div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600">${esc(g[1])} · ${esc(g[2])}</div>
+      </div>
+      <span class="text-xs text-gray-500 font-bold">${esc(g[3])}</span>
+      <button class="btn btn-ghost py-1 px-3" onclick="addGoatIdx(${i})">+</button>
+    </div>`).join('');
+}
+
+/* Handlers take indices, never names — names may contain quotes and must not
+   round-trip through an HTML attribute. */
+function addGoatIdx(i) { addToMyList(GOAT[i][0]); }
+function addFighterToList(id) { const f = byId(id); if (f) addToMyList(f.name); }
+
+function renderGoatPool() {
+  const q = ($('#goatPoolSearch').value || '').trim().toLowerCase();
+  const pool = GOAT.map((g, i) => ({ name: g[0], i }))
+    .filter(p => !q || p.name.toLowerCase().includes(q)).slice(0, 40);
+  $('#goatPool').innerHTML = pool.map(p => `
+    <button class="w-full text-left px-3 py-2 text-xs hover:bg-[#151515] flex justify-between items-center border-b border-[#141414]"
+            onclick="addGoatIdx(${p.i})">
+      <span>${esc(p.name)}</span>
+      <span class="text-red-600 font-black">${myList.includes(p.name) ? '✓' : '+'}</span>
+    </button>`).join('') || '<div class="p-3 text-xs text-gray-600">No match.</div>';
+}
+
+function addToMyList(name) {
+  if (myList.includes(name)) { toast('Already on your list'); return; }
+  if (myList.length >= 50) { toast('List is full at 50'); return; }
+  myList.push(name);
+  store.set('draftList', myList);
+  renderMyList(); renderGoatPool();
+}
+
+function removeFromMyList(i) {
+  myList.splice(i, 1);
+  store.set('draftList', myList);
+  renderMyList(); renderGoatPool();
+}
+
+function moveInMyList(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= myList.length) return;
+  [myList[i], myList[j]] = [myList[j], myList[i]];
+  store.set('draftList', myList);
+  renderMyList();
+}
+
+function clearMyList() {
+  myList = [];
+  store.set('draftList', myList);
+  renderMyList(); renderGoatPool();
+}
+
+function renderMyList() {
+  $('#myListCount').textContent = myList.length;
+  $('#myList').innerHTML = myList.map((n, i) => `
+    <div class="flex items-center gap-2 bg-[#0f0f0f] border border-[#1f1f1f] rounded px-2 py-1.5">
+      <span class="text-yellow-500 font-black italic text-xs w-6">${i + 1}</span>
+      <span class="flex-1 text-xs truncate">${esc(n)}</span>
+      <button class="text-gray-600 hover:text-white text-xs px-1" onclick="moveInMyList(${i},-1)">▲</button>
+      <button class="text-gray-600 hover:text-white text-xs px-1" onclick="moveInMyList(${i},1)">▼</button>
+      <button class="text-gray-600 hover:text-red-600 text-xs px-1" onclick="removeFromMyList(${i})">✕</button>
+    </div>`).join('') || '<div class="text-xs text-gray-600 py-4 text-center">Nothing drafted yet. Add fighters above.</div>';
+}
+
+function publishList() {
+  if (!requireUser('publish a list')) return;
+  if (myList.length < 3) { toast('Add at least 3 fighters'); return; }
+  const title = $('#listTitle').value.trim() || `${user.name}'s Top ${myList.length}`;
+  const list = { id: 'l' + Date.now(), title, user: user.name, likes: 0, items: myList.slice(), ts: Date.now() };
+  communityLists.unshift(list);
+  store.set('communityLists', communityLists);
+
+  posts.unshift({
+    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'Fighter5.png', tag: 'Lists',
+    body: `Just published "${title}" — ${myList.length} fighters. Top 3: ${myList.slice(0, 3).join(', ')}. Come tell me I'm wrong.`,
+    ts: Date.now(), likes: 0, reposts: 0, replies: 0, listId: list.id
+  });
+  store.set('posts', posts);
+
+  renderCommunityLists(); renderFeed();
+  toast('List published to the feed');
+  go('forum');
+}
+
+function likeList(id) {
+  if (!requireUser('like a list')) return;
+  const l = communityLists.find(x => x.id === id);
+  if (!l) return;
+  const on = likedLists[id];
+  l.likes += on ? -1 : 1;
+  likedLists[id] = !on;
+  store.set('communityLists', communityLists);
+  store.set('likedLists', likedLists);
+  renderCommunityLists();
+}
+
+function renderCommunityLists() {
+  $('#communityLists').innerHTML = communityLists.map(l => `
+    <div class="panel panel-hover p-4">
+      <div class="font-black uppercase italic text-sm">${esc(l.title)}</div>
+      <div class="text-[10px] uppercase tracking-widest text-gray-600 mt-1">by ${esc(l.user)} · ${timeAgo(l.ts)} ago</div>
+      <ol class="mt-3 space-y-1 text-xs text-gray-400">
+        ${l.items.slice(0, 5).map((n, i) => `<li><span class="text-yellow-600 font-bold">${i + 1}.</span> ${esc(n)}</li>`).join('')}
+        ${l.items.length > 5 ? `<li class="text-gray-600">+ ${l.items.length - 5} more</li>` : ''}
+      </ol>
+      <button class="mt-3 text-xs font-bold ${likedLists[l.id] ? 'text-red-500' : 'text-gray-500'} hover:text-red-500"
+              onclick="likeList('${l.id}')">
+        <i class="fa-${likedLists[l.id] ? 'solid' : 'regular'} fa-heart"></i> ${fmt(l.likes)}
+      </button>
+    </div>`).join('');
+}
+
+function renderWatch() {
+  $('#watchGrid').innerHTML = FIGHTERS.filter(f => f.status === 'prospect').map(f => `
+    <div class="panel panel-hover overflow-hidden cursor-pointer" onclick="goToProfile('${f.id}')">
+      <div class="relative">
+        <img src="${f.img}" class="w-full h-56 object-cover" alt="${esc(f.name)}">
+        <span class="chip bg-yellow-600 text-black absolute top-3 left-3">Prospect</span>
+        <span class="chip bg-black/80 text-green-500 absolute top-3 right-3">▲ ${f.trend}%</span>
+      </div>
+      <div class="p-4">
+        <h3 class="text-xl font-black uppercase italic">${esc(f.name)}</h3>
+        <p class="text-[10px] uppercase tracking-widest text-gray-600 mb-3">${esc(f.div)} · ${esc(f.country)} · Age ${f.age}</p>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div><div class="font-black italic">${f.rec}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Record</div></div>
+          <div><div class="font-black italic">${f.ko}%</div><div class="text-[9px] uppercase tracking-widest text-gray-600">KO</div></div>
+          <div><div class="font-black italic text-yellow-500">${f.rating}</div><div class="text-[9px] uppercase tracking-widest text-gray-600">Rating</div></div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderTrending() {
+  const sorted = [...FIGHTERS].sort((a, b) => b.trend - a.trend);
+  const max = Math.max(...sorted.map(f => Math.abs(f.trend)));
+  $('#trendingGrid').innerHTML = sorted.map((f, i) => `
+    <div class="panel panel-hover p-4 flex items-center gap-4 cursor-pointer" onclick="goToProfile('${f.id}')">
+      <span class="text-xl font-black italic text-gray-700 w-8">${i + 1}</span>
+      <img src="${f.img}" class="avatar" alt="">
+      <div class="flex-1 min-w-0">
+        <div class="font-bold truncate">${esc(f.name)}</div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600 mb-2">${esc(f.div)} · ${esc(f.org)}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(Math.abs(f.trend) / max * 100).toFixed(0)}%;${f.trend < 0 ? 'background:linear-gradient(90deg,#4b5563,#6b7280)' : ''}"></div></div>
+      </div>
+      <span class="text-lg font-black ${f.trend >= 0 ? 'text-green-500' : 'text-red-500'}">${f.trend > 0 ? '+' : ''}${f.trend}%</span>
+    </div>`).join('');
+}
+
+/* ---------------- fights & awards ---------------- */
+function renderFights() {
+  $('#popularFights').innerHTML = POPULAR_FIGHTS.map(f => `
+    <div class="panel panel-hover p-5">
+      <div class="flex justify-between items-start mb-3">
+        <span class="chip bg-red-700">${esc(f.tag)}</span>
+        <span class="text-[10px] uppercase tracking-widest text-gray-600">${esc(f.event)} · ${f.year}</span>
+      </div>
+      <h3 class="text-xl font-black uppercase italic leading-tight">${esc(f.a)} <span class="text-red-700">vs</span> ${esc(f.b)}</h3>
+      <div class="flex items-center gap-4 mt-3">
+        <span class="text-yellow-500 font-black">${f.rating} ★</span>
+        <span class="text-xs text-gray-500">${fmt(f.votes)} ratings</span>
+        <span class="text-xs text-gray-400 font-bold uppercase tracking-widest ml-auto">${esc(f.result)}</span>
+      </div>
+      <div class="bar-track mt-3"><div class="bar-fill" style="width:${f.rating / 5 * 100}%"></div></div>
+    </div>`).join('');
+
+  $('#awardYear').innerHTML = Object.keys(AWARDS).sort((a, b) => b - a).map(y => `<option>${y}</option>`).join('');
+  renderAwards();
+}
+
+function renderAwards() {
+  const y = $('#awardYear').value || Object.keys(AWARDS).sort((a, b) => b - a)[0];
+  $('#awardsGrid').innerHTML = (AWARDS[y] || []).map(a => `
+    <div class="panel panel-hover overflow-hidden">
+      <div class="relative h-44">
+        <img src="${a.img}" class="w-full h-full object-cover opacity-70" alt="">
+        <div class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"></div>
+        <i class="fa-solid fa-trophy text-yellow-500 absolute top-4 right-4 text-xl"></i>
+        <div class="absolute bottom-4 left-4">
+          <div class="text-[10px] uppercase tracking-[0.2em] text-yellow-500 font-bold">${esc(a.cat)}</div>
+          <div class="text-2xl font-black uppercase italic leading-tight">${esc(a.win)}</div>
+        </div>
+      </div>
+      <p class="p-4 text-xs text-gray-500">${esc(a.note)}</p>
+    </div>`).join('');
+}
+
+/* ---------------- events ---------------- */
+function setEventFilter(f) {
+  eventFilter = f;
+  $$('[data-evt-filter]').forEach(b => b.className = 'btn ' + (b.dataset.evtFilter === f ? 'btn-primary' : 'btn-ghost'));
+  renderEvents();
+}
+
+function eventCard(e, big) {
+  if (!e) return '';
+  const upcoming = e.status === 'upcoming';
+  return `
+    <div class="panel ${big ? 'p-8' : 'p-6'} panel-hover">
+      <div class="flex flex-wrap justify-between items-start gap-4">
+        <div class="min-w-0">
+          <span class="chip ${upcoming ? 'bg-red-700' : 'bg-[#1f1f1f] text-gray-400'}">${upcoming ? 'Upcoming' : 'Result'}</span>
+          <h3 class="${big ? 'text-4xl' : 'text-2xl'} font-black uppercase italic tracking-tighter mt-2">${esc(e.name)}</h3>
+          <p class="text-[10px] uppercase tracking-widest text-gray-600 mt-1">
+            ${new Date(e.date + 'T00:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })} · ${esc(e.venue)}
+          </p>
+        </div>
+        ${upcoming
+          ? `<div class="text-right"><div class="text-2xl font-black italic text-yellow-500 countdown" data-date="${e.date}">—</div>
+             <div class="text-[9px] uppercase tracking-widest text-gray-600">Until First Bell</div></div>`
+          : `<div class="text-right">
+             <div class="text-lg font-black italic">${e.gate ? money(e.gate) : '—'}</div>
+             <div class="text-[9px] uppercase tracking-widest text-gray-600">Gate · ${e.ppv ? fmt(e.ppv) + ' Buys' : 'No PPV'}</div></div>`}
+      </div>
+      <div class="mt-5 grid sm:grid-cols-2 gap-2">
+        ${e.card.map((b, i) => `
+          <div class="flex items-center gap-3 bg-[#0f0f0f] border border-[#1a1a1a] rounded px-3 py-2">
+            <span class="chip ${i === 0 ? 'bg-red-700' : 'bg-[#1f1f1f] text-gray-500'}">${i === 0 ? 'Main' : 'Card'}</span>
+            <span class="text-xs text-gray-300 truncate">${esc(b)}</span>
+          </div>`).join('')}
+      </div>
+      ${upcoming ? `<button class="btn btn-ghost mt-5" onclick="go('fantasy')">Book The Sim →</button>` : ''}
+    </div>`;
+}
+
+function renderEvents() {
+  const list = EVENTS.filter(e => e.status === eventFilter)
+    .sort((a, b) => eventFilter === 'upcoming' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
+  $('#eventsList').innerHTML = list.map(e => eventCard(e)).join('');
+  startCountdowns();
+}
+
+let countdownTimer;
+function startCountdowns() {
+  clearInterval(countdownTimer);
+  const tick = () => {
+    $$('.countdown').forEach(el => {
+      const diff = new Date(el.dataset.date + 'T19:00:00').getTime() - Date.now();
+      if (diff <= 0) { el.textContent = 'LIVE'; return; }
+      const d = Math.floor(diff / 86400e3), h = Math.floor(diff / 3600e3) % 24, m = Math.floor(diff / 60e3) % 60;
+      el.textContent = `${d}d ${h}h ${m}m`;
+    });
+  };
+  tick();
+  countdownTimer = setInterval(tick, 30000);
+}
+
+/* ---------------- news ---------------- */
+function renderNews() {
+  const cats = ['All', ...new Set(NEWS.map(n => n.cat))];
+  $('#newsFilters').innerHTML = cats.map(c =>
+    `<button class="btn ${c === newsFilter ? 'btn-primary' : 'btn-ghost'}" onclick="newsFilter='${c}';renderNews()">${c}</button>`
+  ).join('');
+
+  $('#newsGrid').innerHTML = NEWS.map((n, i) => ({ ...n, i }))
+    .filter(n => newsFilter === 'All' || n.cat === newsFilter).map(n => `
+    <article class="panel panel-hover p-5 flex flex-col">
+      <div class="flex justify-between items-center mb-3">
+        <span class="chip ${n.cat === 'Injury' ? 'bg-red-900' : n.cat === 'Business' ? 'bg-yellow-700' : 'bg-[#1f1f1f] text-gray-400'}">${esc(n.cat)}</span>
+        <span class="text-[10px] uppercase tracking-widest text-gray-600">${timeAgo(n.ts)} ago</span>
+      </div>
+      <h3 class="text-lg font-black uppercase italic leading-tight mb-2">${esc(n.title)}</h3>
+      <p class="text-sm text-gray-500 flex-1">${esc(n.body)}</p>
+      <div class="flex justify-between items-center mt-4 pt-3 border-t border-[#1a1a1a]">
+        <span class="text-[10px] uppercase tracking-widest text-gray-600">${esc(n.src)}</span>
+        <button class="text-[10px] uppercase tracking-widest text-red-600 font-bold hover:text-red-400"
+                onclick="discussInForum(${n.i})">Discuss →</button>
+      </div>
+    </article>`).join('');
+}
+
+function discussInForum(i) {
+  go('forum');
+  const c = $('#composer');
+  c.value = `Re: ${NEWS[i].title} — `;
+  updateCount();
+  c.focus();
+}
+
+/* ---------------- business ---------------- */
+function renderBusiness() {
+  $('#bizStats').innerHTML = BIZ_STATS.map(s => `
+    <div class="panel p-5">
+      <div class="text-[10px] uppercase tracking-widest text-gray-600 mb-2">${esc(s.label)}</div>
+      <div class="text-3xl font-black italic">${esc(s.value)}</div>
+      <div class="text-xs font-bold mt-1 ${s.delta >= 0 ? 'text-green-500' : 'text-red-500'}">
+        <i class="fa-solid fa-arrow-${s.delta >= 0 ? 'up' : 'down'} text-[9px]"></i> ${Math.abs(s.delta)}% YoY
+      </div>
+    </div>`).join('');
+
+  const max = Math.max(...PPV.map(p => p.buys));
+  $('#ppvChart').innerHTML = PPV.map(p => `
+    <div class="mb-4 last:mb-0">
+      <div class="flex justify-between text-xs mb-1.5">
+        <span class="font-bold">${esc(p.fight)} <span class="text-gray-600 font-normal">· ${p.year} · ${esc(p.promo)}</span></span>
+        <span class="text-yellow-500 font-black">${fmt(p.buys)}</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(p.buys / max * 100).toFixed(1)}%"></div></div>
+    </div>`).join('');
+
+  renderGateTable();
+
+  $('#bizNews').innerHTML = BIZ_NEWS.map(n => `
+    <div class="panel panel-hover p-5">
+      <span class="chip bg-yellow-700">${esc(n.tag)}</span>
+      <h3 class="text-lg font-black uppercase italic leading-tight mt-3 mb-2">${esc(n.title)}</h3>
+      <p class="text-sm text-gray-500">${esc(n.body)}</p>
+    </div>`).join('');
+}
+
+function sortGate(key) {
+  gateSort.dir = gateSort.key === key ? -gateSort.dir : -1;
+  gateSort.key = key;
+  renderGateTable();
+}
+
+function renderGateTable() {
+  const cols = [
+    { key:'event', label:'Event' }, { key:'venue', label:'Venue' }, { key:'year', label:'Year' },
+    { key:'gate', label:'Gate' }, { key:'attendance', label:'Attendance' }, { key:'avg', label:'Avg Ticket' }
+  ];
+  const rows = [...GATES].sort((a, b) => {
+    const k = gateSort.key, x = a[k], y = b[k];
+    return (typeof x === 'number' ? x - y : String(x).localeCompare(String(y))) * gateSort.dir;
+  });
+  $('#gateTable').innerHTML = `
+    <thead><tr>${cols.map(c =>
+      `<th onclick="sortGate('${c.key}')">${c.label}${gateSort.key === c.key ? (gateSort.dir === -1 ? ' ▼' : ' ▲') : ''}</th>`
+    ).join('')}</tr></thead>
+    <tbody>${rows.map(g => `
+      <tr>
+        <td class="font-bold">${esc(g.event)}</td>
+        <td class="text-gray-500">${esc(g.venue)}</td>
+        <td class="text-gray-500">${g.year}</td>
+        <td class="text-yellow-500 font-black">${money(g.gate)}</td>
+        <td class="text-gray-400">${fmt(g.attendance)}</td>
+        <td class="text-gray-400">$${g.avg}</td>
+      </tr>`).join('')}</tbody>`;
+}
+
+/* ---------------- fantasy ---------------- */
+function renderFantasySelects() {
+  const opts = FIGHTERS.map(f => `<option value="${f.id}">${esc(f.name)} · ${esc(f.div)}</option>`).join('');
+  $('#fA').innerHTML = opts;
+  $('#fB').innerHTML = opts;
+  $('#fA').value = 'alex-torres';
+  $('#fB').value = 'ivan-cross';
+  renderFantasy();
+  renderDreamFights();
+}
+
+function bookFantasy(id) {
+  go('fantasy');
+  $('#fA').value = id;
+  if ($('#fB').value === id) $('#fB').value = FIGHTERS.find(f => f.id !== id).id;
+  renderFantasy();
+}
+
+function randomMatchup() {
+  const shuffled = [...FIGHTERS].sort(() => Math.random() - 0.5);
+  $('#fA').value = shuffled[0].id;
+  $('#fB').value = shuffled[1].id;
+  renderFantasy();
+  runSim();
+}
+
+function fighterMiniCard(f) {
+  return `
+    <img src="${f.img}" class="w-full h-52 object-cover rounded mb-4" alt="${esc(f.name)}">
+    <h3 class="text-2xl font-black uppercase italic">${esc(f.name)}</h3>
+    <p class="text-[10px] uppercase tracking-widest text-gray-600 mb-4">${esc(f.div)} · ${f.rec} · ${esc(f.country)}</p>
+    ${Object.entries(f.attrs).map(([k, v]) => `
+      <div class="mb-2">
+        <div class="flex justify-between text-[10px] uppercase tracking-widest mb-1">
+          <span class="text-gray-500">${k === 'iq' ? 'Fight IQ' : k}</span><span class="font-bold">${v}</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${v}%"></div></div>
+      </div>`).join('')}`;
+}
+
+function renderFantasy() {
+  const a = byId($('#fA').value), b = byId($('#fB').value);
+  $('#fAcard').innerHTML = fighterMiniCard(a);
+  $('#fBcard').innerHTML = fighterMiniCard(b);
+  $('#simResult').innerHTML = '';
+  lastSim = null; /* stale result must not be shareable after a corner change */
+}
+
+function runSim() {
+  const a = byId($('#fA').value), b = byId($('#fB').value);
+  if (a.id === b.id) { toast('Pick two different fighters'); return; }
+
+  const score = f => Object.values(f.attrs).reduce((s, v) => s + v, 0) / 6;
+  const key = [a.id, b.id].sort().join('|');
+  const wobble = (seeded(key) - 0.5) * 14; /* stable per matchup */
+  const sa = score(a) + wobble, sb = score(b) - wobble;
+  const total = sa + sb;
+  const pa = Math.round(sa / total * 100), pb = 100 - pa;
+  const winner = pa >= pb ? a : b;
+  const loser = pa >= pb ? b : a;
+  const margin = Math.abs(pa - pb);
+
+  const method = margin > 14
+    ? (winner.attrs.power > 88 ? 'KO / TKO' : 'Submission')
+    : margin > 7 ? 'Unanimous Decision' : 'Split Decision';
+  const round = margin > 14 ? (winner.attrs.power > 92 ? 'Round 1–2' : 'Round 2–3') : 'Round 5';
+
+  const tally = fantasyVotes[key] || { [a.id]: 0, [b.id]: 0 };
+  const tv = (tally[a.id] || 0) + (tally[b.id] || 0);
+
+  lastSim = { a: a.name, b: b.name, winner: winner.name, pct: Math.max(pa, pb), method };
+
+  $('#simResult').innerHTML = `
+    <div class="panel p-8">
+      <h2 class="section-label mb-6">Simulation Result</h2>
+      <div class="grid md:grid-cols-[1fr_auto_1fr] gap-6 items-center mb-8">
+        <div class="text-right">
+          <div class="text-3xl font-black uppercase italic ${winner.id === a.id ? 'text-white' : 'text-gray-600'}">${esc(a.name)}</div>
+          <div class="text-5xl font-black italic ${winner.id === a.id ? 'text-yellow-500' : 'text-gray-700'}">${pa}%</div>
+        </div>
+        <div class="text-center">
+          <div class="text-xs uppercase tracking-[0.3em] text-gray-600 mb-1">Projected</div>
+          <div class="chip bg-red-700 inline-block">${method}</div>
+          <div class="text-[10px] uppercase tracking-widest text-gray-500 mt-2">${round}</div>
+        </div>
+        <div>
+          <div class="text-3xl font-black uppercase italic ${winner.id === b.id ? 'text-white' : 'text-gray-600'}">${esc(b.name)}</div>
+          <div class="text-5xl font-black italic ${winner.id === b.id ? 'text-yellow-500' : 'text-gray-700'}">${pb}%</div>
+        </div>
+      </div>
+      <div class="bar-track mb-8" style="height:14px"><div class="bar-fill" style="width:${pa}%"></div></div>
+
+      <p class="text-sm text-gray-400 mb-6">
+        <span class="font-bold text-white">${esc(winner.name)}</span> takes it on the model's numbers —
+        the edge is ${esc(topEdge(winner, loser))}. ${margin < 8 ? 'Close enough that a single exchange flips it.' : 'A clear projected advantage.'}
+      </p>
+
+      <div class="border-t border-[#1a1a1a] pt-6">
+        <div class="flex justify-between items-center mb-3">
+          <span class="section-label">Community Pick</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-600">${fmt(tv)} votes</span>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-3">
+          ${[a, b].map(f => {
+            const pct = tv ? Math.round((tally[f.id] || 0) / tv * 100) : 0;
+            return `<button class="poll-bar text-left px-4 flex items-center justify-between" onclick="voteFantasy('${key}','${f.id}')">
+                      <div class="poll-bar-fill" style="width:${pct}%"></div>
+                      <span class="relative text-xs font-bold">${esc(f.name)}</span>
+                      <span class="relative text-xs font-black text-yellow-500">${pct}%</span>
+                    </button>`;
+          }).join('')}
+        </div>
+        <button class="btn btn-ghost mt-5" onclick="shareSim()">Take It To The Feed</button>
+      </div>
+    </div>`;
+}
+
+function topEdge(w, l) {
+  const keys = Object.keys(w.attrs);
+  const best = keys.reduce((a, k) => (w.attrs[k] - l.attrs[k] > w.attrs[a] - l.attrs[a] ? k : a), keys[0]);
+  const label = best === 'iq' ? 'fight IQ' : best;
+  return `${label} (${w.attrs[best]} vs ${l.attrs[best]})`;
+}
+
+function voteFantasy(key, id) {
+  if (!requireUser('vote')) return;
+  const t = fantasyVotes[key] || {};
+  t[id] = (t[id] || 0) + 1;
+  fantasyVotes[key] = t;
+  store.set('fantasyVotes', fantasyVotes);
+  runSim();
+  toast('Vote counted');
+}
+
+function shareSim() {
+  if (!lastSim) { toast('Run a sim first'); return; }
+  const s = lastSim;
+  go('forum');
+  const c = $('#composer');
+  $('#postTag').value = 'Fantasy';
+  c.value = `Booked ${s.a} vs ${s.b} in the sim. ${s.winner} by ${s.method}, ${s.pct}%. Fight me.`;
+  updateCount();
+  c.focus();
+}
+
+function renderDreamFights() {
+  const max = Math.max(...DREAM_FIGHTS.map(d => d.books));
+  $('#dreamFights').innerHTML = DREAM_FIGHTS.map((d, i) => `
+    <div class="panel p-4 flex items-center gap-4">
+      <span class="text-xl font-black italic text-gray-700 w-8">${i + 1}</span>
+      <div class="flex-1 min-w-0">
+        <div class="font-black uppercase italic truncate">${esc(d.a)} <span class="text-red-700">vs</span> ${esc(d.b)}</div>
+        <div class="bar-track mt-2"><div class="bar-fill" style="width:${(d.books / max * 100).toFixed(0)}%"></div></div>
+      </div>
+      <span class="text-xs text-gray-500 font-bold whitespace-nowrap">${fmt(d.books)} booked</span>
+    </div>`).join('');
+}
+
+/* ---------------- forum ---------------- */
+const POST_TAGS = ['Debate', 'Lists', 'Analysis', 'Fantasy', 'News'];
+
+function updateCount() {
+  const n = $('#composer').value.length;
+  $('#charCount').textContent = n + '/280';
+  $('#charCount').style.color = n > 260 ? '#ef4444' : '#4b5563';
+}
+
+function submitPost() {
+  if (!requireUser('post')) return;
+  const body = $('#composer').value.trim();
+  if (!body) { toast('Write something first'); return; }
+  posts.unshift({
+    id: 'p' + Date.now(), user: user.name, handle: user.handle, avatar: 'Fighter5.png',
+    tag: $('#postTag').value, body, ts: Date.now(), likes: 0, reposts: 0, replies: 0, mine: true
+  });
+  store.set('posts', posts);
+  $('#composer').value = '';
+  updateCount();
+  renderFeed();
+  toast('Posted');
+}
+
+function likePost(id) {
+  if (!requireUser('like a post')) return;
+  const p = posts.find(x => x.id === id);
+  if (!p) return;
+  const on = likedPosts[id];
+  p.likes += on ? -1 : 1;
+  likedPosts[id] = !on;
+  store.set('posts', posts);
+  store.set('likedPosts', likedPosts);
+  renderFeed();
+}
+
+function repost(id) {
+  if (!requireUser('repost')) return;
+  const p = posts.find(x => x.id === id);
+  p.reposts++;
+  store.set('posts', posts);
+  renderFeed();
+  toast('Reposted');
+}
+
+function replyTo(id) {
+  if (!requireUser('reply')) return;
+  const p = posts.find(x => x.id === id);
+  p.replies++;
+  store.set('posts', posts);
+  const c = $('#composer');
+  c.value = `${p.handle} `;
+  updateCount();
+  c.focus();
+  renderFeed();
+}
+
+function deletePost(id) {
+  posts = posts.filter(p => p.id !== id);
+  store.set('posts', posts);
+  renderFeed();
+  toast('Deleted');
+}
+
+function renderForum() {
+  $('#postTag').innerHTML = POST_TAGS.map(t => `<option>${t}</option>`).join('');
+  $('#feedFilters').innerHTML = ['All', ...POST_TAGS].map(t =>
+    `<button class="btn ${t === feedFilter ? 'btn-primary' : 'btn-ghost'}" onclick="feedFilter='${t}';renderForum()">${t}</button>`
+  ).join('');
+
+  const topics = [
+    { tag:'#Top50Debate', posts:4820 }, { tag:'#ApexFC121', posts:3110 }, { tag:'#CrossVsMontoya', posts:2740 },
+    { tag:'#OpenScoring', posts:1980 }, { tag:'#FighterPay', posts:1640 }
+  ];
+  $('#trendTopics').innerHTML = topics.map(t => `
+    <div class="flex justify-between items-center cursor-pointer hover:text-red-500" onclick="feedFilter='All';$('#composer').value='${t.tag} ';updateCount();$('#composer').focus()">
+      <span class="font-bold text-sm">${t.tag}</span>
+      <span class="text-[10px] uppercase tracking-widest text-gray-600">${fmt(t.posts)}</span>
+    </div>`).join('');
+
+  $('#topContributors').innerHTML = CONTRIBUTORS.slice(0, 5).map(c => `
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-full bg-[#1f1f1f] flex items-center justify-center text-[10px] font-black">${esc(c.user.slice(0, 2).toUpperCase())}</div>
+      <div class="flex-1 min-w-0">
+        <div class="text-sm font-bold truncate">${esc(c.user)}</div>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600">${esc(c.badge)}</div>
+      </div>
+      <span class="text-xs font-black text-yellow-500">${fmt(c.rep)}</span>
+    </div>`).join('');
+
+  renderFeed();
+}
+
+function renderFeed() {
+  const list = posts.filter(p => feedFilter === 'All' || p.tag === feedFilter);
+  $('#feed').innerHTML = list.map(p => {
+    const list_ = p.listId ? communityLists.find(l => l.id === p.listId) : null;
+    return `
+    <div class="post p-4 flex gap-3">
+      <img src="${p.avatar}" class="avatar" alt="" onerror="this.style.visibility='hidden'">
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="font-bold text-sm">${esc(p.user)}</span>
+          <span class="text-xs text-gray-600">${esc(p.handle)}</span>
+          <span class="text-xs text-gray-700">· ${timeAgo(p.ts)}</span>
+          <span class="chip bg-[#1f1f1f] text-gray-500 ml-auto">${esc(p.tag)}</span>
+        </div>
+        <p class="text-sm text-gray-200 mt-1.5 whitespace-pre-wrap break-words">${esc(p.body)}</p>
+        ${list_ ? `
+          <div class="mt-3 border border-[#1f1f1f] rounded p-3 bg-[#0d0d0d]">
+            <div class="text-[10px] uppercase tracking-widest text-yellow-600 font-bold mb-2">${esc(list_.title)}</div>
+            <ol class="text-xs text-gray-400 space-y-0.5">
+              ${list_.items.slice(0, 5).map((n, i) => `<li>${i + 1}. ${esc(n)}</li>`).join('')}
+              ${list_.items.length > 5 ? `<li class="text-gray-600">+ ${list_.items.length - 5} more</li>` : ''}
+            </ol>
+          </div>` : ''}
+        <div class="flex gap-6 mt-3 text-xs text-gray-600">
+          <button class="hover:text-red-500" onclick="replyTo('${p.id}')"><i class="fa-regular fa-comment"></i> ${p.replies}</button>
+          <button class="hover:text-green-500" onclick="repost('${p.id}')"><i class="fa-solid fa-retweet"></i> ${p.reposts}</button>
+          <button class="${likedPosts[p.id] ? 'text-red-500' : 'hover:text-red-500'}" onclick="likePost('${p.id}')">
+            <i class="fa-${likedPosts[p.id] ? 'solid' : 'regular'} fa-heart"></i> ${p.likes}
+          </button>
+          ${p.mine ? `<button class="hover:text-white ml-auto" onclick="deletePost('${p.id}')"><i class="fa-regular fa-trash-can"></i></button>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('') || '<div class="p-10 text-center text-gray-600 text-sm">Nothing here yet.</div>';
+}
+
+/* ---------------- community ---------------- */
+const SUB_TYPES = ['Correction', 'Fight Record', 'Event Data', 'Scorecard', 'Fighter Bio', 'Media / Photo'];
+
+function renderCommunity() {
+  renderPolls();
+  $('#subType').innerHTML = SUB_TYPES.map(t => `<option>${t}</option>`).join('');
+  renderSubQueue();
+
+  $('#repTable').innerHTML = `
+    <thead><tr><th>#</th><th>Contributor</th><th>Badge</th><th>Accepted</th><th>Reputation</th></tr></thead>
+    <tbody>${CONTRIBUTORS.map((c, i) => `
+      <tr>
+        <td class="text-yellow-500 font-black italic">${i + 1}</td>
+        <td class="font-bold">${esc(c.user)}</td>
+        <td><span class="chip bg-[#1f1f1f] text-gray-400">${esc(c.badge)}</span></td>
+        <td class="text-gray-400">${c.accepted}</td>
+        <td class="text-yellow-500 font-black">${fmt(c.rep)}</td>
+      </tr>`).join('')}</tbody>`;
+}
+
+function renderPolls() {
+  $('#polls').innerHTML = SEED_POLLS.map(p => {
+    const tallies = pollTallies[p.id];
+    const total = tallies.reduce((a, b) => a + b, 0);
+    const voted = pollVotes[p.id];
+    return `
+      <div class="panel p-5">
+        <h3 class="font-black uppercase italic text-lg mb-1">${esc(p.q)}</h3>
+        <div class="text-[10px] uppercase tracking-widest text-gray-600 mb-4">${fmt(total)} votes${voted !== undefined ? ' · you voted' : ''}</div>
+        <div class="space-y-2">
+          ${p.opts.map((o, i) => {
+            const pct = total ? Math.round(tallies[i] / total * 100) : 0;
+            const mine = voted === i;
+            return `<button class="poll-bar w-full text-left px-4 flex items-center justify-between ${mine ? 'ring-1 ring-red-700' : ''}"
+                            onclick="votePoll('${p.id}',${i})">
+                      <div class="poll-bar-fill" style="width:${voted !== undefined ? pct : 0}%"></div>
+                      <span class="relative text-xs font-bold">${esc(o)}${mine ? ' ✓' : ''}</span>
+                      <span class="relative text-xs font-black text-yellow-500">${voted !== undefined ? pct + '%' : ''}</span>
+                    </button>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function votePoll(id, i) {
+  if (!requireUser('vote')) return;
+  const prev = pollVotes[id];
+  if (prev === i) { toast('Already your pick'); return; }
+  if (prev !== undefined) pollTallies[id][prev]--;
+  pollTallies[id][i]++;
+  pollVotes[id] = i;
+  store.set('pollTallies', pollTallies);
+  store.set('pollVotes', pollVotes);
+  renderPolls();
+  toast(prev !== undefined ? 'Vote changed' : 'Vote counted');
+}
+
+function submitContribution() {
+  if (!requireUser('submit')) return;
+  const title = $('#subTitle').value.trim();
+  if (!title) { toast('Add a subject'); return; }
+  submissions.unshift({
+    id: 'c' + Date.now(), type: $('#subType').value, title,
+    body: $('#subBody').value.trim(), source: $('#subSource').value.trim(),
+    status: 'In Review', user: user.name, ts: Date.now()
+  });
+  store.set('subs', submissions);
+  $('#subTitle').value = ''; $('#subBody').value = ''; $('#subSource').value = '';
+  renderSubQueue();
+  toast('Submitted for review');
+}
+
+function renderSubQueue() {
+  $('#subQueue').innerHTML = submissions.map(s => `
+    <div class="panel p-4">
+      <div class="flex justify-between items-center mb-2">
+        <span class="chip bg-[#1f1f1f] text-gray-400">${esc(s.type)}</span>
+        <span class="chip ${s.status === 'Accepted' ? 'bg-green-800' : 'bg-yellow-700'}">${esc(s.status)}</span>
+      </div>
+      <div class="font-bold text-sm">${esc(s.title)}</div>
+      ${s.body ? `<p class="text-xs text-gray-500 mt-1">${esc(s.body)}</p>` : ''}
+      <div class="text-[10px] uppercase tracking-widest text-gray-600 mt-2">${esc(s.user)} · ${timeAgo(s.ts)} ago</div>
+    </div>`).join('');
+}
+
+/* ---------------- global search ---------------- */
+function focusSearch() { $('#globalSearch').focus(); }
+
+function runSearch() {
+  const q = $('#globalSearch').value.trim().toLowerCase();
+  const box = $('#searchResults');
+  if (!q) { box.classList.add('hidden'); return; }
+
+  const hits = [
+    ...FIGHTERS.filter(f => f.name.toLowerCase().includes(q) || f.div.toLowerCase().includes(q))
+      .map(f => ({ label: f.name, sub: f.div + ' · ' + f.rec, act: `goToProfile('${f.id}')` })),
+    ...EVENTS.filter(e => e.name.toLowerCase().includes(q))
+      .map(e => ({ label: e.name, sub: 'Event · ' + e.date, act: `go('events')` })),
+    ...POPULAR_FIGHTS.filter(f => (f.a + ' ' + f.b).toLowerCase().includes(q))
+      .map(f => ({ label: `${f.a} vs ${f.b}`, sub: 'Fight · ' + f.event, act: `go('fights')` })),
+    ...GOAT.filter(g => g[0].toLowerCase().includes(q))
+      .map(g => ({ label: g[0], sub: 'All-Time · ' + g[2], act: `go('rankings');setRankPane('goat')` }))
+  ].slice(0, 8);
+
+  box.classList.remove('hidden');
+  box.innerHTML = hits.map(h => `
+    <button class="w-full text-left px-4 py-3 hover:bg-[#151515] border-b border-[#141414]"
+            onclick="$('#searchResults').classList.add('hidden');${h.act}">
+      <div class="text-sm font-bold">${esc(h.label)}</div>
+      <div class="text-[10px] uppercase tracking-widest text-gray-600">${esc(h.sub)}</div>
+    </button>`).join('') || '<div class="px-4 py-6 text-center text-xs text-gray-600">No results.</div>';
+}
+
+/* ---------------- init ---------------- */
+function init() {
+  renderNav();
+  renderUser();
+  renderTicker();
+  renderHome();
+  renderRankings();
+  renderFights();
+  setEventFilter('upcoming');
+  renderNews();
+  renderBusiness();
+  renderFantasySelects();
+  renderForum();
+  renderCommunity();
+
+  $('#globalSearch').addEventListener('input', runSearch);
+  document.addEventListener('click', e => {
+    if (!e.target.closest('#globalSearch') && !e.target.closest('#searchResults')) $('#searchResults').classList.add('hidden');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      $$('.modal.open').forEach(m => m.classList.remove('open'));
+      document.body.style.overflow = '';
+      $('#searchResults').classList.add('hidden');
+    }
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault(); focusSearch();
+    }
+  });
+
+  const hash = location.hash.slice(1);
+  if (NAV.some(n => n.id === hash)) go(hash);
+}
+
+init();
+</script>
+</body>
+</html>
