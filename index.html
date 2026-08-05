@@ -433,6 +433,11 @@
                             <select id="simWeightSet" onchange="onSimConfigChange()"></select>
                         </div>
                     </div>
+                    <div class="mt-4">
+                        <label class="text-[10px] uppercase tracking-widest text-gray-500 block mb-2" for="simPredictor">Predictor</label>
+                        <select id="simPredictor" onchange="onSimConfigChange()"></select>
+                        <p id="predictorNote" class="text-[10px] text-gray-600 mt-2 leading-relaxed"></p>
+                    </div>
                     <p id="simConfigNote" class="text-[10px] uppercase tracking-widest text-gray-600 mt-4"></p>
                 </div>
             </div>
@@ -456,6 +461,14 @@
             </div>
 
             <div class="px-10 pb-12" id="simResult"></div>
+
+            <section class="px-10 pb-12">
+                <div class="flex justify-between items-center mb-6 flex-wrap gap-3">
+                    <h2 class="section-label">Model Evaluation</h2>
+                    <button class="btn btn-ghost" onclick="runModelEvaluation()">Run Backtest</button>
+                </div>
+                <div id="modelEvaluation"></div>
+            </section>
 
             <section class="px-10 pb-12">
                 <h2 class="section-label mb-6">Recent Comparison Sessions</h2>
@@ -1002,6 +1015,101 @@ const AWARDS = {
     { cat:'Comeback of the Year', win:'Lucas Brant', note:'Three straight after two losses.', img:'public/Fighter4.png' }
   ]
 };
+
+/* Concluded bouts, chronological — the prediction model's training set.
+   Partial by design: only bouts where BOTH fighters are on the roster are
+   recorded, so a fighter's logged history is a small, non-random slice of
+   their career. See the header of apps/api/src/data/fights.ts. */
+const FIGHT_LOG = [
+  { date:"2013-09-14", event:"mayweather-vs-canelo", a:"floyd-mayweather", b:"canelo-alvarez", winner:"floyd-mayweather", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2014-09-27", event:"ufc-178", a:"conor-mcgregor", b:"dustin-poirier", winner:"conor-mcgregor", method:"KO/TKO", round:1, scheduledRounds:3, title:false, main:false },
+  { date:"2015-01-03", event:"ufc-182", a:"jon-jones", b:"daniel-cormier", winner:"jon-jones", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2015-05-02", event:"mayweather-vs-pacquiao", a:"floyd-mayweather", b:"manny-pacquiao", winner:"floyd-mayweather", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2015-12-12", event:"ufc-194", a:"conor-mcgregor", b:"jose-aldo", winner:"conor-mcgregor", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2016-07-09", event:"ufc-200", a:"daniel-cormier", b:"anderson-silva", winner:"daniel-cormier", method:"Decision", round:null, scheduledRounds:3, title:false, main:true },
+  { date:"2016-12-30", event:"ufc-207", a:"amanda-nunes", b:"ronda-rousey", winner:"amanda-nunes", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2017-06-03", event:"ufc-212", a:"max-holloway", b:"jose-aldo", winner:"max-holloway", method:"KO/TKO", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2017-09-09", event:"ufc-215", a:"amanda-nunes", b:"valentina-shevchenko", winner:"amanda-nunes", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2017-09-16", event:"canelo-vs-ggg-1", a:"canelo-alvarez", b:"gennadiy-golovkin", winner:null, method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2018-07-07", event:"ufc-226", a:"daniel-cormier", b:"stipe-miocic", winner:"daniel-cormier", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2018-09-15", event:"canelo-vs-ggg-2", a:"canelo-alvarez", b:"gennadiy-golovkin", winner:"canelo-alvarez", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2018-10-06", event:"ufc-229", a:"khabib-nurmagomedov", b:"conor-mcgregor", winner:"khabib-nurmagomedov", method:"Submission", round:4, scheduledRounds:5, title:true, main:true },
+  { date:"2018-12-01", event:"fury-vs-wilder-1", a:"tyson-fury", b:"deontay-wilder", winner:null, method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2018-12-29", event:"ufc-232", a:"amanda-nunes", b:"cris-cyborg", winner:"amanda-nunes", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:false },
+  { date:"2019-08-17", event:"ufc-241", a:"stipe-miocic", b:"daniel-cormier", winner:"stipe-miocic", method:"KO/TKO", round:4, scheduledRounds:5, title:true, main:true },
+  { date:"2019-09-07", event:"ufc-242", a:"khabib-nurmagomedov", b:"dustin-poirier", winner:"khabib-nurmagomedov", method:"Submission", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2019-10-06", event:"ufc-243", a:"israel-adesanya", b:"robert-whittaker", winner:"israel-adesanya", method:"KO/TKO", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2019-12-14", event:"ufc-245", a:"alex-volkanovski", b:"max-holloway", winner:"alex-volkanovski", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2020-02-22", event:"fury-vs-wilder-2", a:"tyson-fury", b:"deontay-wilder", winner:"tyson-fury", method:"KO/TKO", round:7, scheduledRounds:12, title:true, main:true },
+  { date:"2020-07-12", event:"ufc-251", a:"alex-volkanovski", b:"max-holloway", winner:"alex-volkanovski", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2020-08-15", event:"ufc-252", a:"stipe-miocic", b:"daniel-cormier", winner:"stipe-miocic", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2020-10-17", event:"lopez-vs-lomachenko", a:"teofimo-lopez", b:"vasiliy-lomachenko", winner:"teofimo-lopez", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2020-10-24", event:"ufc-254", a:"khabib-nurmagomedov", b:"justin-gaethje", winner:"khabib-nurmagomedov", method:"Submission", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2021-01-23", event:"ufc-257", a:"dustin-poirier", b:"conor-mcgregor", winner:"dustin-poirier", method:"KO/TKO", round:2, scheduledRounds:5, title:false, main:true },
+  { date:"2021-03-06", event:"ufc-259", a:"aljamain-sterling", b:"petr-yan", winner:"aljamain-sterling", method:"DQ", round:4, scheduledRounds:5, title:true, main:false },
+  { date:"2021-04-24", event:"ufc-261", a:"rose-namajunas", b:"zhang-weili", winner:"rose-namajunas", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2021-07-10", event:"ufc-264", a:"dustin-poirier", b:"conor-mcgregor", winner:"dustin-poirier", method:"KO/TKO", round:1, scheduledRounds:5, title:false, main:true },
+  { date:"2021-09-25", event:"usyk-vs-joshua-1", a:"oleksandr-usyk", b:"anthony-joshua", winner:"oleksandr-usyk", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2021-10-09", event:"fury-vs-wilder-3", a:"tyson-fury", b:"deontay-wilder", winner:"tyson-fury", method:"KO/TKO", round:11, scheduledRounds:12, title:true, main:true },
+  { date:"2021-11-06", event:"ufc-268", a:"rose-namajunas", b:"zhang-weili", winner:"rose-namajunas", method:"Decision", round:null, scheduledRounds:5, title:true, main:false },
+  { date:"2021-12-11", event:"ufc-269", a:"charles-oliveira", b:"dustin-poirier", winner:"charles-oliveira", method:"Submission", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2021-12-11", event:"ufc-269", a:"julianna-pena", b:"amanda-nunes", winner:"julianna-pena", method:"Submission", round:2, scheduledRounds:5, title:true, main:false },
+  { date:"2022-02-12", event:"ufc-271", a:"israel-adesanya", b:"robert-whittaker", winner:"israel-adesanya", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2022-04-30", event:"taylor-vs-serrano-1", a:"katie-taylor", b:"amanda-serrano", winner:"katie-taylor", method:"Decision", round:null, scheduledRounds:10, title:true, main:true },
+  { date:"2022-05-07", event:"ufc-274", a:"charles-oliveira", b:"justin-gaethje", winner:"charles-oliveira", method:"Submission", round:1, scheduledRounds:5, title:false, main:true },
+  { date:"2022-05-07", event:"bivol-vs-canelo", a:"dmitry-bivol", b:"canelo-alvarez", winner:"dmitry-bivol", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2022-07-02", event:"ufc-276", a:"alex-volkanovski", b:"max-holloway", winner:"alex-volkanovski", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2022-07-30", event:"ufc-277", a:"amanda-nunes", b:"julianna-pena", winner:"amanda-nunes", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2022-08-20", event:"ufc-278", a:"leon-edwards", b:"kamaru-usman", winner:"leon-edwards", method:"KO/TKO", round:5, scheduledRounds:5, title:true, main:true },
+  { date:"2022-08-20", event:"usyk-vs-joshua-2", a:"oleksandr-usyk", b:"anthony-joshua", winner:"oleksandr-usyk", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2022-09-17", event:"canelo-vs-ggg-3", a:"canelo-alvarez", b:"gennadiy-golovkin", winner:"canelo-alvarez", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2022-10-22", event:"ufc-280", a:"islam-makhachev", b:"charles-oliveira", winner:"islam-makhachev", method:"Submission", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2022-10-22", event:"ufc-280", a:"aljamain-sterling", b:"petr-yan", winner:"aljamain-sterling", method:"Decision", round:null, scheduledRounds:5, title:true, main:false },
+  { date:"2023-02-12", event:"ufc-284", a:"islam-makhachev", b:"alex-volkanovski", winner:"islam-makhachev", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2023-03-04", event:"ufc-285", a:"jon-jones", b:"ciryl-gane", winner:"jon-jones", method:"Submission", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2023-03-04", event:"ufc-285", a:"alexa-grasso", b:"valentina-shevchenko", winner:"alexa-grasso", method:"Submission", round:4, scheduledRounds:5, title:true, main:false },
+  { date:"2023-03-18", event:"ufc-286", a:"leon-edwards", b:"kamaru-usman", winner:"leon-edwards", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2023-05-20", event:"haney-vs-lomachenko", a:"devin-haney", b:"vasiliy-lomachenko", winner:"devin-haney", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2023-07-08", event:"ufc-290", a:"alexandre-pantoja", b:"brandon-moreno", winner:"alexandre-pantoja", method:"Decision", round:null, scheduledRounds:5, title:true, main:false },
+  { date:"2023-07-08", event:"ufc-290", a:"dricus-du-plessis", b:"robert-whittaker", winner:"dricus-du-plessis", method:"KO/TKO", round:2, scheduledRounds:3, title:false, main:false },
+  { date:"2023-07-29", event:"ufc-291", a:"justin-gaethje", b:"dustin-poirier", winner:"justin-gaethje", method:"KO/TKO", round:2, scheduledRounds:5, title:false, main:true },
+  { date:"2023-07-29", event:"crawford-vs-spence", a:"terence-crawford", b:"errol-spence-jr", winner:"terence-crawford", method:"KO/TKO", round:9, scheduledRounds:12, title:true, main:true },
+  { date:"2023-08-19", event:"ufc-292", a:"sean-omalley", b:"aljamain-sterling", winner:"sean-omalley", method:"KO/TKO", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2023-09-10", event:"ufc-293", a:"sean-strickland", b:"israel-adesanya", winner:"sean-strickland", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2023-10-21", event:"ufc-294", a:"islam-makhachev", b:"alex-volkanovski", winner:"islam-makhachev", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2023-11-11", event:"ufc-295", a:"alex-pereira", b:"jiri-prochazka", winner:"alex-pereira", method:"KO/TKO", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2024-01-20", event:"ufc-297", a:"dricus-du-plessis", b:"sean-strickland", winner:"dricus-du-plessis", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2024-02-17", event:"ufc-298", a:"ilia-topuria", b:"alex-volkanovski", winner:"ilia-topuria", method:"KO/TKO", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2024-04-13", event:"ufc-300", a:"max-holloway", b:"justin-gaethje", winner:"max-holloway", method:"KO/TKO", round:5, scheduledRounds:5, title:false, main:false },
+  { date:"2024-05-18", event:"usyk-vs-fury-1", a:"oleksandr-usyk", b:"tyson-fury", winner:"oleksandr-usyk", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2024-06-01", event:"ufc-302", a:"islam-makhachev", b:"dustin-poirier", winner:"islam-makhachev", method:"Submission", round:5, scheduledRounds:5, title:true, main:true },
+  { date:"2024-06-29", event:"ufc-303", a:"alex-pereira", b:"jiri-prochazka", winner:"alex-pereira", method:"KO/TKO", round:2, scheduledRounds:5, title:true, main:true },
+  { date:"2024-07-27", event:"ufc-304", a:"belal-muhammad", b:"leon-edwards", winner:"belal-muhammad", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2024-08-17", event:"ufc-305", a:"dricus-du-plessis", b:"israel-adesanya", winner:"dricus-du-plessis", method:"Submission", round:4, scheduledRounds:5, title:true, main:true },
+  { date:"2024-09-14", event:"ufc-306", a:"merab-dvalishvili", b:"sean-omalley", winner:"merab-dvalishvili", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2024-09-14", event:"ufc-306", a:"valentina-shevchenko", b:"alexa-grasso", winner:"valentina-shevchenko", method:"Decision", round:null, scheduledRounds:5, title:true, main:false },
+  { date:"2024-10-12", event:"beterbiev-vs-bivol-1", a:"artur-beterbiev", b:"dmitry-bivol", winner:"artur-beterbiev", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2024-10-26", event:"ufc-308", a:"ilia-topuria", b:"max-holloway", winner:"ilia-topuria", method:"KO/TKO", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2024-11-15", event:"taylor-vs-serrano-2", a:"katie-taylor", b:"amanda-serrano", winner:"katie-taylor", method:"Decision", round:null, scheduledRounds:10, title:true, main:false },
+  { date:"2024-11-16", event:"ufc-309", a:"jon-jones", b:"stipe-miocic", winner:"jon-jones", method:"KO/TKO", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2024-12-21", event:"usyk-vs-fury-2", a:"oleksandr-usyk", b:"tyson-fury", winner:"oleksandr-usyk", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2025-02-08", event:"ufc-312", a:"dricus-du-plessis", b:"sean-strickland", winner:"dricus-du-plessis", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2025-02-22", event:"beterbiev-vs-bivol-2", a:"dmitry-bivol", b:"artur-beterbiev", winner:"dmitry-bivol", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2025-03-08", event:"ufc-313", a:"magomed-ankalaev", b:"alex-pereira", winner:"magomed-ankalaev", method:"Decision", round:null, scheduledRounds:5, title:true, main:true },
+  { date:"2025-06-07", event:"ufc-316", a:"merab-dvalishvili", b:"sean-omalley", winner:"merab-dvalishvili", method:"Submission", round:3, scheduledRounds:5, title:true, main:true },
+  { date:"2025-06-07", event:"ufc-316", a:"kayla-harrison", b:"julianna-pena", winner:"kayla-harrison", method:"Submission", round:2, scheduledRounds:5, title:true, main:false },
+  { date:"2025-06-28", event:"ufc-317", a:"ilia-topuria", b:"charles-oliveira", winner:"ilia-topuria", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2025-06-28", event:"bam-vs-estrada", a:"jesse-rodriguez", b:"juan-francisco-estrada", winner:"jesse-rodriguez", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2025-07-11", event:"taylor-vs-serrano-3", a:"katie-taylor", b:"amanda-serrano", winner:"katie-taylor", method:"Decision", round:null, scheduledRounds:10, title:true, main:true },
+  { date:"2025-09-13", event:"canelo-vs-crawford", a:"terence-crawford", b:"canelo-alvarez", winner:"terence-crawford", method:"Decision", round:null, scheduledRounds:12, title:true, main:true },
+  { date:"2025-10-04", event:"ufc-320", a:"alex-pereira", b:"magomed-ankalaev", winner:"alex-pereira", method:"KO/TKO", round:1, scheduledRounds:5, title:true, main:true },
+  { date:"2025-10-25", event:"ufc-321", a:"tom-aspinall", b:"ciryl-gane", winner:null, method:"No Contest", round:1, scheduledRounds:5, title:true, main:true }
+];
+
+/* Scheduled but not yet fought — the genuine forward test set. */
+const UPCOMING_BOUTS = [
+
+];
 
 const PPV = [
   { fight:'Montoya vs Halloran II', year:2003, buys:2_400_000, promo:'Legacy' },
@@ -2472,7 +2580,7 @@ const divisionLabel = f =>
   f.gender ? (f.gender === 'male' ? "Men's division" : "Women's division") : 'Division unknown';
 
 /* ---------------- §11.5 comparison engine ---------------- */
-function createComparisonSession({ fighterA, fighterB, rulesetId, environmentProfileId, weightSetId }) {
+function createComparisonSession({ fighterA, fighterB, rulesetId, environmentProfileId, weightSetId, predictor }) {
   const ruleset = RULESET_BY_ID[rulesetId] || RULESET_BY_ID['rs-mma'];
   const weightSet = WEIGHT_SET_BY_ID[weightSetId] || weightSetsFor(ruleset.id).find(w => w.is_default);
   const model = MODEL_BY_ID[weightSet.model_id];
@@ -2492,6 +2600,7 @@ function createComparisonSession({ fighterA, fighterB, rulesetId, environmentPro
     environment_profile_id: envProfile ? envProfile.id : null,
     status: sanctioning.sanctionable ? 'draft' : 'prohibited',
     created_at: new Date().toISOString(),
+    predictor: predictor || 'heuristic',
     ruleset, model, weightSet, envProfile, sanctioning,
     participants: [
       { id: `cp-${id}-red`,  comparison_session_id:id, fighter_id:fighterA.id, corner:'red',  rating_snapshot_id:snapA.id, fighter:fighterA, snapshot:snapA },
@@ -2703,7 +2812,16 @@ function computePrediction(session) {
      set's calibration constant; at 1 this is exactly §13.3's raw ratio. */
   const k = ws.probability_exponent || 1;
   const powA = Math.pow(Math.max(scoreA, 0.0001), k), powB = Math.pow(Math.max(scoreB, 0.0001), k);
-  const probA = powA + powB > 0 ? powA / (powA + powB) : 0.5;
+  const heuristicProbA = powA + powB > 0 ? powA / (powA + powB) : 0.5;
+
+  /* The selected predictor decides the headline number. Everything downstream —
+     winner, outcome distribution, method, round — follows from it, so switching
+     predictors changes the whole projection rather than just one figure. */
+  const predictorKind = session.predictor || 'heuristic';
+  const probA = clamp(
+    predictorProbability(predictorKind, a, b, session.predict_as_of || todayIso(), heuristicProbA),
+    0.001, 0.999
+  );
   const probB = 1 - probA;
   const winnerIsA = probA >= probB;
   const winner = winnerIsA ? a : b, loser = winnerIsA ? b : a;
@@ -2784,6 +2902,7 @@ function computePrediction(session) {
     outcome_distributions: outcomes,
     /* working values the UI reports */
     prob_a: round4(probA), prob_b: round4(probB),
+    predictor: predictorKind, heuristic_prob_a: round4(heuristicProbA),
     raw_score_a: round4(rawScoreA), raw_score_b: round4(rawScoreB),
     adjusted_score_a: round4(scoreA), adjusted_score_b: round4(scoreB),
     winner_is_a: winnerIsA, winner, loser, margin: round4(margin),
@@ -2796,6 +2915,593 @@ function computePrediction(session) {
   session.status = 'predicted';
   session.updated_at = new Date().toISOString();
   return prediction;
+}
+
+/* =====================================================================
+   PREDICTION MODEL — GENERATED, DO NOT HAND-EDIT
+   Compiled from packages/shared-utils/src/fight-prediction.ts. The API and
+   this page run the same implementation; edit the TypeScript source and
+   re-run scripts/gen-combat-database-data.js.
+   ===================================================================== */
+const FightPrediction = (() => {
+  const exports = {};
+  "use strict";
+  /**
+   * Fight prediction — learned from concluded bouts.
+   *
+   * Single source of truth for the predictive model. The standalone
+   * CombatDatabase.html page, the API's simulation service, and anything else
+   * that wants a probability all run this code, so a change to the model cannot
+   * land in one surface and silently miss another.
+   *
+   * ── DELIBERATELY DEPENDENCY-FREE ────────────────────────────────────────────
+   * Runtime imports are none — only types. That keeps the compiled output a
+   * plain self-contained CommonJS file, which the generator inlines verbatim
+   * into the standalone HTML page (which has no build step and cannot `require`).
+   *
+   * Everything app-specific is INJECTED rather than imported: the fighter
+   * lookup, any extra feature families, any rival predictors to benchmark
+   * against. The module knows about fights and arithmetic, nothing else.
+   *
+   * ── WHAT THE NUMBERS ARE WORTH ──────────────────────────────────────────────
+   * The FORM features here are computed strictly from bouts BEFORE the fight
+   * being predicted, so they can be backtested honestly.
+   *
+   * Any feature derived from a fighter's CURRENT ratings cannot. Ratings that
+   * come from career win/loss/KO totals already contain the outcomes of the
+   * fights being scored, so a backtest over them is partly reading the answer.
+   * That is why `attributeFeatures` is an injected option flagged `leaky` rather
+   * than something this module offers by default — callers must opt in with
+   * their eyes open, and `evaluate()` labels the result.
+   */
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.applyScale = exports.brierScore = exports.logLoss = exports.ELO_START = exports.DEFAULT_WARMUP = exports.DEFAULT_HYPER = void 0;
+  exports.fitScale = fitScale;
+  exports.fitLogistic = fitLogistic;
+  exports.fitTemperature = fitTemperature;
+  exports.createFightPredictor = createFightPredictor;
+  exports.DEFAULT_HYPER = { learningRate: 0.35, l2: 0.05, epochs: 400 };
+  /** Bouts before this many are training-only; scoring starts after. */
+  exports.DEFAULT_WARMUP = 24;
+  exports.ELO_START = 1500;
+  /* ---------------- small numeric helpers ---------------- */
+  const clampTo = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+  const sigmoid = (z) => 1 / (1 + Math.exp(-clampTo(z, -30, 30)));
+  const dot = (w, x) => w.reduce((s, wi, i) => s + wi * x[i], 0);
+  const logLoss = (p, outcome) => -(outcome * Math.log(clampTo(p, 1e-9, 1 - 1e-9)) +
+      (1 - outcome) * Math.log(clampTo(1 - p, 1e-9, 1 - 1e-9)));
+  exports.logLoss = logLoss;
+  const brierScore = (p, outcome) => (p - outcome) ** 2;
+  exports.brierScore = brierScore;
+  const daysBetween = (a, b) => Math.abs(new Date(a).getTime() - new Date(b).getTime()) / 864e5;
+  /* ---------------- logistic regression ---------------- */
+  /**
+   * Per-feature scale only — the mean is NOT removed.
+   *
+   * Delta features are already centred at zero by the mirroring below, and
+   * subtracting a mean would break the antisymmetry that mirroring exists to
+   * guarantee.
+   */
+  function fitScale(X) {
+      const d = X[0].length;
+      const sd = new Array(d).fill(0);
+      for (const row of X)
+          for (let j = 0; j < d; j++)
+              sd[j] += row[j] ** 2;
+      for (let j = 0; j < d; j++)
+          sd[j] = Math.sqrt(sd[j] / X.length) || 1;
+      return sd;
+  }
+  const applyScale = (row, scale) => row.map((v, j) => v / scale[j]);
+  exports.applyScale = applyScale;
+  /**
+   * Batch gradient descent on the logistic loss with L2.
+   *
+   * No intercept, on purpose: a bias term would encode "the A corner tends to
+   * win", which is meaningless when corner assignment carries no information.
+   */
+  function fitLogistic(X, y, hyper = exports.DEFAULT_HYPER) {
+      const d = X[0].length;
+      const w = new Array(d).fill(0);
+      for (let epoch = 0; epoch < hyper.epochs; epoch++) {
+          const grad = new Array(d).fill(0);
+          for (let i = 0; i < X.length; i++) {
+              const err = sigmoid(dot(w, X[i])) - y[i];
+              for (let j = 0; j < d; j++)
+                  grad[j] += err * X[i][j];
+          }
+          for (let j = 0; j < d; j++)
+              w[j] -= hyper.learningRate * (grad[j] / X.length + hyper.l2 * w[j]);
+      }
+      return w;
+  }
+  /**
+   * Temperature scaling. A raw logistic fit on this little data is
+   * systematically overconfident; dividing the logit by T > 1 shrinks
+   * probabilities toward 50%.
+   *
+   * Callers must fit this on predictions the model already made OUT of sample.
+   * Fitting on the training fold is useless (a fit looks calibrated on its own
+   * training data) and fitting on the test fold is cheating.
+   */
+  function fitTemperature(history) {
+      if (history.length < 12)
+          return 1;
+      let T = 1;
+      for (let step = 0; step < 200; step++) {
+          let grad = 0;
+          for (const { z, outcome } of history) {
+              grad += (sigmoid(z / T) - outcome) * (-z / (T * T));
+          }
+          T = clampTo(T - (0.5 * grad) / history.length, 0.25, 6);
+      }
+      return T;
+  }
+  function createFightPredictor(options) {
+      const hyper = options.hyper ?? exports.DEFAULT_HYPER;
+      const warmup = options.warmup ?? exports.DEFAULT_WARMUP;
+      const { getFighter, referenceYear } = options;
+      const bouts = [...options.bouts].sort((x, y) => x.date.localeCompare(y.date));
+      const decided = bouts.filter((f) => f.winner);
+      /* ---- point-in-time history ---- */
+      function historyBefore(slug, date) {
+          const prior = bouts.filter((f) => f.date < date && (f.a === slug || f.b === slug));
+          let wins = 0;
+          let losses = 0;
+          let draws = 0;
+          let finishes = 0;
+          let titleFights = 0;
+          let streak = 0;
+          const opponents = [];
+          for (const f of prior) {
+              opponents.push({ slug: f.a === slug ? f.b : f.a, date: f.date });
+              if (f.title)
+                  titleFights++;
+              if (!f.winner) {
+                  draws++;
+                  continue;
+              }
+              if (f.winner === slug) {
+                  wins++;
+                  if (f.method === 'KO/TKO' || f.method === 'Submission')
+                      finishes++;
+              }
+              else
+                  losses++;
+          }
+          for (let i = prior.length - 1; i >= 0; i--) {
+              const f = prior[i];
+              if (!f.winner)
+                  break;
+              const won = f.winner === slug;
+              if (streak === 0)
+                  streak = won ? 1 : -1;
+              else if (won && streak > 0)
+                  streak++;
+              else if (!won && streak < 0)
+                  streak--;
+              else
+                  break;
+          }
+          const decidedCount = wins + losses;
+          const last = prior.length ? prior[prior.length - 1] : null;
+          return {
+              fights: prior.length,
+              wins,
+              losses,
+              draws,
+              finishes,
+              titleFights,
+              streak,
+              /* Laplace-smoothed: a 1-0 fighter is not a 100% fighter. */
+              winRate: (wins + 1) / (decidedCount + 2),
+              finishRate: (finishes + 1) / (wins + 2),
+              layoffDays: last ? daysBetween(date, last.date) : null,
+              opponents,
+          };
+      }
+      function opponentQualityBefore(slug, date) {
+          const { opponents } = historyBefore(slug, date);
+          if (!opponents.length)
+              return 0.5;
+          const rates = opponents.map((o) => historyBefore(o.slug, o.date).winRate);
+          return rates.reduce((s, v) => s + v, 0) / rates.length;
+      }
+      /* ---- Elo, built in one forward pass ----
+         A bout's pre-fight ratings depend only on earlier bouts, so this is
+         leak-free even though it is computed once over the whole log. */
+      const eloTimeline = new Map();
+      (function buildElo() {
+          const rating = new Map();
+          const get = (s) => rating.get(s) ?? exports.ELO_START;
+          const record = (slug, date, value) => {
+              const list = eloTimeline.get(slug);
+              if (list)
+                  list.push({ date, ratingAfter: value });
+              else
+                  eloTimeline.set(slug, [{ date, ratingAfter: value }]);
+          };
+          for (const f of bouts) {
+              const ra = get(f.a);
+              const rb = get(f.b);
+              /* A draw is still information: neither separated themselves. */
+              const sa = !f.winner ? 0.5 : f.winner === f.a ? 1 : 0;
+              const ea = 1 / (1 + Math.pow(10, (rb - ra) / 400));
+              const k = f.title ? 40 : f.main ? 32 : 24;
+              const na = ra + k * (sa - ea);
+              const nb = rb + k * (1 - sa - (1 - ea));
+              rating.set(f.a, na);
+              rating.set(f.b, nb);
+              record(f.a, f.date, na);
+              record(f.b, f.date, nb);
+          }
+      })();
+      /** Rating in effect strictly before `date`, so a bout never informs itself. */
+      function eloAt(slug, date) {
+          const timeline = eloTimeline.get(slug);
+          if (!timeline)
+              return exports.ELO_START;
+          let r = exports.ELO_START;
+          for (const e of timeline) {
+              if (e.date < date)
+                  r = e.ratingAfter;
+              else
+                  break;
+          }
+          return r;
+      }
+      const eloExpected = (a, b, date) => 1 / (1 + Math.pow(10, (eloAt(b.id, date) - eloAt(a.id, date)) / 400));
+      function ageAt(fighter, date) {
+          if (fighter.age == null)
+              return null;
+          return fighter.age - (referenceYear - Number(String(date).slice(0, 4)));
+      }
+      /* ---- feature families ---- */
+      const formFeatures = [
+          { key: 'form_elo', label: 'Elo (pre-fight)', get: (f, d) => eloAt(f.id, d) / 400 },
+          { key: 'form_win_rate', label: 'Prior win rate', get: (f, d) => historyBefore(f.id, d).winRate },
+          { key: 'form_experience', label: 'Logged experience', get: (f, d) => Math.log1p(historyBefore(f.id, d).fights) },
+          { key: 'form_streak', label: 'Current run', get: (f, d) => clampTo(historyBefore(f.id, d).streak, -5, 5) },
+          { key: 'form_finish', label: 'Prior finish rate', get: (f, d) => historyBefore(f.id, d).finishRate },
+          { key: 'form_opp_quality', label: 'Opposition faced', get: (f, d) => opponentQualityBefore(f.id, d) },
+          { key: 'form_title_exp', label: 'Title-fight experience', get: (f, d) => Math.log1p(historyBefore(f.id, d).titleFights) },
+          {
+              key: 'form_layoff',
+              label: 'Layoff (freshness)',
+              get: (f, d) => {
+                  const l = historyBefore(f.id, d).layoffDays;
+                  /* No prior bout is not a long layoff — take the neutral midpoint
+                     rather than inventing a number. */
+                  return l === null ? 0.5 : Math.exp(-l / 540);
+              },
+          },
+          {
+              key: 'form_age',
+              label: 'Age on the night',
+              get: (f, d) => {
+                  const a = ageAt(f, d);
+                  return a === null ? 0 : -Math.max(0, a - 30) / 10;
+              },
+          },
+      ];
+      function featureSpec(kind) {
+          const attrs = options.attributeFeatures?.providers ?? [];
+          if (kind === 'form')
+              return formFeatures;
+          if (kind === 'attrs')
+              return attrs.length ? attrs : formFeatures;
+          return [...formFeatures, ...attrs];
+      }
+      function featureVector(spec, a, b, date) {
+          return spec.map((f) => {
+              const d = f.get(a, date) - f.get(b, date);
+              return Number.isFinite(d) ? d : 0;
+          });
+      }
+      /* ---- training ----
+         Each bout enters twice, mirrored, so the fit cannot acquire a corner bias
+         and the model is exactly antisymmetric: p(a,b) + p(b,a) === 1. */
+      function buildTrainingSet(sample, kind) {
+          const spec = featureSpec(kind);
+          const X = [];
+          const y = [];
+          for (const bout of sample) {
+              const a = getFighter(bout.a);
+              const b = getFighter(bout.b);
+              if (!a || !b || !bout.winner)
+                  continue;
+              const x = featureVector(spec, a, b, bout.date);
+              const aWon = bout.winner === bout.a ? 1 : 0;
+              X.push(x);
+              y.push(aWon);
+              X.push(x.map((v) => -v));
+              y.push(1 - aWon);
+          }
+          return { X, y, spec };
+      }
+      function trainModel(sample, kind) {
+          const { X, y, spec } = buildTrainingSet(sample, kind);
+          if (!X.length)
+              return null;
+          const scale = fitScale(X);
+          const weights = fitLogistic(X.map((r) => (0, exports.applyScale)(r, scale)), y, hyper);
+          return { weights, scale, spec: spec, trainedOn: X.length / 2 };
+      }
+      function logit(model, kind, a, b, date) {
+          const spec = featureSpec(kind);
+          return dot(model.weights, (0, exports.applyScale)(featureVector(spec, a, b, date), model.scale));
+      }
+      function predictWith(model, kind, a, b, date) {
+          return sigmoid(logit(model, kind, a, b, date));
+      }
+      /* ---- scoring ---- */
+      function score(rows, leakFree, leakNote) {
+          if (!rows.length)
+              return null;
+          const n = rows.length;
+          /* A 50/50 call is half a hit. Scoring it as a miss makes a coin flip read
+             0% accuracy, which is nonsense. */
+          const correct = rows.reduce((s, r) => s + (r.p === 0.5 ? 0.5 : (r.p > 0.5) === (r.outcome === 1) ? 1 : 0), 0);
+          const accuracy = correct / n;
+          const se = Math.sqrt((accuracy * (1 - accuracy)) / n);
+          return {
+              n,
+              accuracy,
+              accuracyCi: [clampTo(accuracy - 1.96 * se, 0, 1), clampTo(accuracy + 1.96 * se, 0, 1)],
+              logLoss: rows.reduce((s, r) => s + (0, exports.logLoss)(r.p, r.outcome), 0) / n,
+              brier: rows.reduce((s, r) => s + (0, exports.brierScore)(r.p, r.outcome), 0) / n,
+              ties: rows.filter((r) => r.p === 0.5).length,
+              calibration: [[0.5, 0.6], [0.6, 0.7], [0.7, 0.8], [0.8, 1.01]].map(([lo, hi]) => {
+                  const band = rows
+                      .map((r) => (r.p >= 0.5 ? { p: r.p, hit: r.outcome === 1 } : { p: 1 - r.p, hit: r.outcome === 0 }))
+                      .filter((r) => r.p >= lo && r.p < hi);
+                  return {
+                      lo,
+                      hi,
+                      n: band.length,
+                      predicted: band.length ? band.reduce((s, r) => s + r.p, 0) / band.length : null,
+                      observed: band.length ? band.filter((r) => r.hit).length / band.length : null,
+                  };
+              }),
+              rows,
+              leakFree,
+              leakNote,
+          };
+      }
+      /**
+       * Walk-forward backtest: to predict bout i, train only on bouts before it.
+       * The only protocol that answers "would this have called the fight
+       * beforehand?" — a shuffled split lets the model learn a fighter's future.
+       */
+      function walkForward(kind) {
+          const rows = [];
+          const calibrationHistory = [];
+          for (let i = 0; i < decided.length; i++) {
+              const bout = decided[i];
+              const a = getFighter(bout.a);
+              const b = getFighter(bout.b);
+              if (!a || !b)
+                  continue;
+              if (i < warmup)
+                  continue;
+              const model = trainModel(decided.slice(0, i), kind);
+              if (!model)
+                  continue;
+              const z = logit(model, kind, a, b, bout.date);
+              const outcome = bout.winner === bout.a ? 1 : 0;
+              const T = fitTemperature(calibrationHistory);
+              rows.push({ bout, p: sigmoid(z / T), rawP: sigmoid(z), temperature: T, outcome });
+              calibrationHistory.push({ z, outcome });
+          }
+          return rows;
+      }
+      function baselineRows(pick) {
+          const rows = [];
+          decided.forEach((bout, i) => {
+              if (i < warmup)
+                  return; /* same test window as walk-forward */
+              const a = getFighter(bout.a);
+              const b = getFighter(bout.b);
+              if (!a || !b)
+                  return;
+              const p = pick(a, b, bout);
+              if (p === null)
+                  return;
+              rows.push({ bout, p, outcome: bout.winner === bout.a ? 1 : 0 });
+          });
+          return rows;
+      }
+      /** Every model and baseline over one shared test window. */
+      function evaluate() {
+          const results = {};
+          const attrNote = options.attributeFeatures?.leakNote;
+          results['Learned · form'] = score(walkForward('form'), true);
+          if (options.attributeFeatures) {
+              results['Learned · attrs'] = score(walkForward('attrs'), false, attrNote);
+              results['Learned · both'] = score(walkForward('both'), false, attrNote);
+          }
+          results['Coin flip'] = score(baselineRows(() => 0.5), true);
+          results['Elo'] = score(baselineRows((a, b, bout) => eloExpected(a, b, bout.date)), true);
+          results['Better prior record'] = score(baselineRows((a, b, bout) => {
+              const ra = historyBefore(a.id, bout.date).winRate;
+              const rb = historyBefore(b.id, bout.date).winRate;
+              return ra === rb ? 0.5 : ra > rb ? 0.65 : 0.35;
+          }), true);
+          for (const [name, baseline] of Object.entries(options.externalBaselines ?? {})) {
+              results[name] = score(baselineRows(baseline.predict), !baseline.leakNote, baseline.leakNote);
+          }
+          return results;
+      }
+      /* Trained lazily and cached — a fit is cheap, but not free. */
+      const cache = new Map();
+      function model(kind = 'form') {
+          if (!cache.has(kind))
+              cache.set(kind, trainModel(decided, kind));
+          return cache.get(kind) ?? null;
+      }
+      /** Probability that `a` beats `b`, as of `date`. */
+      function predict(a, b, date, kind = 'form') {
+          const m = model(kind);
+          return m ? predictWith(m, kind, a, b, date) : null;
+      }
+      return {
+          bouts,
+          decided,
+          warmup,
+          historyBefore,
+          opponentQualityBefore,
+          eloAt,
+          eloExpected,
+          featureSpec,
+          featureVector,
+          trainModel,
+          predictWith,
+          model,
+          predict,
+          walkForward,
+          baselineRows,
+          score,
+          evaluate,
+      };
+  }
+
+  return exports;
+})();
+const { createFightPredictor, DEFAULT_HYPER, ELO_START } = FightPrediction;
+
+/* =====================================================================
+   PREDICTION MODEL — WIRED TO THE SHARED IMPLEMENTATION
+   ---------------------------------------------------------------------
+   The model itself lives in packages/shared-utils/src/fight-prediction.ts and
+   is inlined above by the generator. This block only supplies the parts that
+   are specific to THIS page: how to look a fighter up, the attribute feature
+   family, and the rival predictors worth benchmarking.
+
+   Both things injected below are contaminated for backtesting, and are passed
+   with the note that says so:
+
+   * ATTRIBUTE features come from deriveAttributes(), which reads career
+     win/loss/KO totals — totals that include the outcomes of the very fights
+     being scored.
+   * The P4P RANK is computed by seed.ts from fightsFor(), i.e. from this
+     fight log. It already knows how these bouts ended.
+
+   They are still measured, because seeing how flattering a leaky feature looks
+   is the point.
+   ===================================================================== */
+
+/* Ages in FIGHTERS are measured at this year, so point-in-time age needs it. */
+const RANKING_REFERENCE_YEAR = 2026;
+
+const ATTR_LEAK_NOTE =
+  'Attribute ratings are derived from career totals that already include these outcomes.';
+
+/* The metric catalog as per-fighter feature providers, on a 0–1 scale. */
+function attributeFeatureProviders() {
+  return metricDefsFor('rs-mma').map(def => ({
+    key: `attr_${def.metric_key}`,
+    label: def.display_name,
+    get: (f) => {
+      const raw = def.derive(f);
+      return (Number.isFinite(raw) ? clamp(raw, def.min_value, def.max_value) : def.default_value) / 100;
+    }
+  }));
+}
+
+const PREDICTOR_ENGINE = createFightPredictor({
+  bouts: FIGHT_LOG,
+  getFighter: byId,
+  referenceYear: RANKING_REFERENCE_YEAR,
+  attributeFeatures: { providers: attributeFeatureProviders(), leakNote: ATTR_LEAK_NOTE },
+  externalBaselines: {
+    'Higher P4P rank': {
+      leakNote: 'The P4P score is computed FROM this fight log — it already knows the answers.',
+      predict: (a, b) => (a.rank === b.rank ? 0.5 : a.rank < b.rank ? 0.65 : 0.35)
+    },
+    'Hand-tuned heuristic': {
+      leakNote: ATTR_LEAK_NOTE,
+      predict: (a, b) => {
+        try {
+          const rs = RULESET_BY_ID[suggestRuleset(a, b)];
+          const report = runComparisonAndPrediction(a, b, {
+            rulesetId: rs.id, weightSetId: `ws-${rs.id}-1`
+          });
+          return report.prediction ? report.prediction.heuristic_prob_a : null;
+        } catch { return null; }
+      }
+    }
+  }
+});
+
+const DECIDED_LOG = PREDICTOR_ENGINE.decided;
+
+/* Averaging two predictors usually beats either. Claimed only where measured. */
+function blendRows(rowsA, rowsB, weight = 0.5) {
+  const byKey = new Map(rowsB.map(r => [`${r.bout.date}|${r.bout.a}|${r.bout.b}`, r]));
+  return rowsA.map(r => {
+    const other = byKey.get(`${r.bout.date}|${r.bout.a}|${r.bout.b}`);
+    return other ? { ...r, p: weight * r.p + (1 - weight) * other.p } : r;
+  });
+}
+
+/* Full scoreboard: the shared harness plus the blends this page offers. */
+function evaluateAll() {
+  const results = PREDICTOR_ENGINE.evaluate();
+  const heuristicRows = results['Hand-tuned heuristic'] ? results['Hand-tuned heuristic'].rows : null;
+  if (heuristicRows) {
+    const formRows = results['Learned \u00b7 form'] ? results['Learned \u00b7 form'].rows : null;
+    if (formRows) {
+      results['Blend \u00b7 heuristic + form'] =
+        PREDICTOR_ENGINE.score(blendRows(formRows, heuristicRows), false, ATTR_LEAK_NOTE);
+    }
+    if (results['Elo']) {
+      results['Blend \u00b7 Elo + heuristic'] =
+        PREDICTOR_ENGINE.score(blendRows(results['Elo'].rows, heuristicRows), false, ATTR_LEAK_NOTE);
+    }
+  }
+  return results;
+}
+
+/* ---------------- selectable predictors ----------------
+   Three ways to turn a matchup into a probability. The measured backtest for
+   each is in the Model Evaluation panel — the labels below carry the headline
+   number so the choice is informed rather than aesthetic.
+
+   `leakFree` is the honest caveat: the attribute ratings are derived from
+   career win/loss/KO totals, which include the outcomes of the very fights the
+   backtest scores. Any predictor touching them scores better than it deserves. */
+/* Training and caching are the shared engine's job now. */
+function learnedModel(kind) {
+  return PREDICTOR_ENGINE.model(kind);
+}
+
+const PREDICTORS = {
+  heuristic: {
+    label: 'Hand-tuned heuristic',
+    note: 'The weighted metric model. Uses attribute ratings only.',
+    leakFree: false
+  },
+  'learned-form': {
+    label: 'Learned · form only',
+    note: 'Logistic fit on fight history: Elo, prior record, streak, layoff, age. Nothing from the attribute ratings, so its backtest is honest.',
+    leakFree: true
+  },
+  blend: {
+    label: 'Blend · heuristic + learned form',
+    note: 'Mean of the two. The only configuration that separated from a coin flip at 95% in the backtest.',
+    leakFree: false
+  }
+};
+
+/* Hypothetical bouts are predicted as of today, so point-in-time features see
+   the whole log. */
+const todayIso = () => new Date().toISOString().slice(0, 10);
+
+function predictorProbability(kind, a, b, date, heuristicProbA) {
+  if (kind === 'heuristic') return heuristicProbA;
+  const learned = PREDICTOR_ENGINE.predict(a, b, date, 'form');
+  if (learned === null) return heuristicProbA;
+  return kind === 'blend' ? (learned + heuristicProbA) / 2 : learned;
 }
 
 /* ---------------- driver: session → comparison → prediction ---------------- */
@@ -2860,6 +3566,7 @@ function renderFantasySelects() {
     ARENA_ENVIRONMENT_PROFILES.map(p =>
       `<option value="${p.id}">${esc(p.name)} · ${esc(ARENA_BY_ID[p.arena_id].name)}</option>`).join('');
   $('#simEnv').value = 'aep-msg';
+  renderPredictorSelect();
 
   renderFantasy();
   renderDreamFights();
@@ -2912,6 +3619,101 @@ function syncWeightSetSelect() {
   sel.value = (sets.find(w => w.id === prev) || sets.find(w => w.is_default) || sets[0]).id;
 }
 
+/* ---- model evaluation panel ----
+   The backtest refits a model for every bout in the test window, so it is a
+   few seconds of work and runs only when asked. */
+let evaluationCache = null;
+
+function runModelEvaluation() {
+  const el = $('#modelEvaluation');
+  el.innerHTML = `<div class="panel p-6 text-xs text-gray-500">
+      Walk-forward backtest running — refitting the model once per bout…</div>`;
+  /* Yield so the message paints before the main thread blocks. */
+  setTimeout(() => {
+    evaluationCache = evaluationCache || evaluateAll();
+    renderModelEvaluation(evaluationCache);
+  }, 30);
+}
+
+function renderModelEvaluation(results) {
+  const names = Object.keys(results).filter(n => results[n]);
+  const best = names.reduce((a, n) => (results[n].logLoss < results[a].logLoss ? n : a), names[0]);
+  const coin = results['Coin flip'];
+
+  const rows = names.map(name => {
+    const r = results[name];
+    /* The harness reports its own contamination — no hand-maintained list to
+       fall out of date when a model is added. */
+    const leak = r.leakFree ? null : (r.leakNote || 'Contains contaminated features.');
+    const beatsCoin = r.logLoss < coin.logLoss;
+    return `
+      <tr>
+        <td>
+          <div class="font-bold ${name === best ? 'text-yellow-500' : ''}">${esc(name)}</div>
+          ${leak ? `<div class="text-[10px] text-red-500 leading-snug mt-1">⚠ ${esc(leak)}</div>`
+                 : `<div class="text-[10px] text-green-600 leading-snug mt-1">leak-free</div>`}
+        </td>
+        <td class="text-right font-bold">${(r.accuracy * 100).toFixed(1)}%</td>
+        <td class="text-right text-gray-500 text-[11px]">
+          ${(r.accuracyCi[0] * 100).toFixed(0)}–${(r.accuracyCi[1] * 100).toFixed(0)}%
+        </td>
+        <td class="text-right font-bold ${beatsCoin ? 'text-green-500' : 'text-gray-600'}">${r.logLoss.toFixed(3)}</td>
+        <td class="text-right">${r.brier.toFixed(3)}</td>
+      </tr>`;
+  }).join('');
+
+  $('#modelEvaluation').innerHTML = `
+    <div class="panel p-6">
+      <p class="text-[11px] text-gray-500 mb-4 leading-relaxed">
+        Walk-forward over ${coin.n} bouts: to predict each fight the model is refit on only the fights
+        that had already happened. Lower log loss is better; a coin flip scores 0.693.
+        <span class="text-white">The 95% intervals overlap almost everywhere</span> — on a test window
+        this small, most of these models are not distinguishable from one another.
+      </p>
+      <div class="scroll-x">
+        <table class="data-table">
+          <thead><tr>
+            <th style="cursor:default">Model</th>
+            <th style="cursor:default" class="text-right">Accuracy</th>
+            <th style="cursor:default" class="text-right">95% CI</th>
+            <th style="cursor:default" class="text-right">Log loss</th>
+            <th style="cursor:default" class="text-right">Brier</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="border-t border-[#1a1a1a] mt-6 pt-5">
+        <span class="section-label">What this does and does not show</span>
+        <ul class="text-[11px] text-gray-500 mt-3 space-y-2 leading-relaxed">
+          <li>• Every model marked ⚠ reads features built from career totals that already contain
+              these results. Their scores are flattering and cannot be used as evidence of skill.</li>
+          <li>• The leak-free models sit close to a coin flip. That is the honest state of prediction
+              on ${DECIDED_LOG.length} logged bouts, not a bug.</li>
+          <li>• Fixing it needs point-in-time ratings — each fighter's state as of the fight date.
+              The roster carries no time series, so the pipeline is built for it but cannot use it yet.</li>
+        </ul>
+      </div>
+    </div>`;
+}
+
+function renderPredictorSelect() {
+  const sel = $('#simPredictor');
+  if (!sel) return;
+  sel.innerHTML = Object.entries(PREDICTORS).map(([k, p]) =>
+    `<option value="${k}">${esc(p.label)}</option>`).join('');
+  sel.value = 'heuristic';
+  renderPredictorNote();
+}
+
+function renderPredictorNote() {
+  const el = $('#predictorNote');
+  if (!el) return;
+  const p = PREDICTORS[$('#simPredictor').value] || PREDICTORS.heuristic;
+  el.innerHTML = `${esc(p.note)} ${p.leakFree
+    ? '<span class="text-green-600">Backtest is leak-free.</span>'
+    : '<span class="text-red-500">Backtest is contaminated by attribute ratings — see Model Evaluation.</span>'}`;
+}
+
 function renderSimConfigNote() {
   const a = byId($('#fA').value), b = byId($('#fB').value);
   const rs = RULESET_BY_ID[$('#simRuleset').value];
@@ -2940,6 +3742,7 @@ function renderSimConfigNote() {
    'expired' rather than leave a stale prediction attached. */
 function onSimConfigChange() {
   syncWeightSetSelect();
+  renderPredictorNote();
   renderSimConfigNote();
   clearSimResult();
 }
@@ -3009,7 +3812,8 @@ function runSim() {
     report = runComparisonAndPrediction(a, b, {
       rulesetId: $('#simRuleset').value,
       environmentProfileId: $('#simEnv').value || null,
-      weightSetId: $('#simWeightSet').value
+      weightSetId: $('#simWeightSet').value,
+      predictor: $('#simPredictor').value
     });
   } catch (err) {
     console.error(err);
